@@ -1,0 +1,44 @@
+{
+    "name":"cors",
+    "version":"3.0.8",
+    "author":"Eric Peterson",
+    "location":"forgeboxStorage",
+    "homepage":"https://github.com/coldbox-modules/cors",
+    "documentation":"https://github.com/coldbox-modules/cors",
+    "repository":{
+        "type":"git",
+        "URL":"https://github.com/coldbox-modules/cors"
+    },
+    "license":[
+        {
+            "type":"MIT",
+            "URL":"https://github.com/coldbox-modules/cors/LICENSE"
+        }
+    ],
+    "bugs":"https://github.com/coldbox-modules/cors/issues",
+    "slug":"cors",
+    "shortDescription":"Add CORS headers to your app in one module",
+    "description":"Add CORS headers to your app in one module",
+    "type":"modules",
+    "dependencies":{},
+    "devDependencies":{
+        "coldbox":"^6.0.0",
+        "testbox":"^4.0.0",
+        "hyper":"^3.6.2"
+    },
+    "installPaths":{
+        "testbox":"testbox/",
+        "coldbox":"tests/resources/app/coldbox/",
+        "hyper":"tests/resources/app/modules/hyper/"
+    },
+    "scripts":{},
+    "ignore":[
+        "**/.*",
+        "test",
+        "tests"
+    ],
+    "testbox":{
+        "runner":"http://localhost:51647/tests/runner.cfm",
+        "verbose":false
+    }
+}
