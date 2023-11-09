@@ -4,6 +4,8 @@ component threadSafe {
 
 	variables.dsn = { prod = "fsyweb_pro", dev = "fsyweb_dev", local = "fsyweb_local" };
 
+	variables.dsn.scheduler = variables.dsn.local
+
 	public query function countStarted() {
 		return QueryExecute(
 			"
@@ -14,7 +16,7 @@ component threadSafe {
 				and context_type = 'Enrollment'
 		",
 			{},
-			{ datasource = variables.dsn.prod }
+			{ datasource = variables.dsn.scheduler }
 		);
 	}
 
@@ -31,7 +33,7 @@ component threadSafe {
 				and prereg_link is not null
 		",
 			{},
-			{ datasource = variables.dsn.prod }
+			{ datasource = variables.dsn.scheduler }
 		);
 	}
 
@@ -49,7 +51,7 @@ component threadSafe {
 				and prereg_link not like 'my[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
 		",
 			{},
-			{ datasource = variables.dsn.prod }
+			{ datasource = variables.dsn.scheduler }
 		);
 	}
 
@@ -69,7 +71,7 @@ component threadSafe {
 			) data
 		",
 			{},
-			{ datasource = variables.dsn.prod }
+			{ datasource = variables.dsn.scheduler }
 		);
 	}
 
@@ -81,7 +83,7 @@ component threadSafe {
 			select count(*) as completed from FSY.DBO.event where event_type = 'preRegReceived'
 		",
 			{},
-			{ datasource = variables.dsn.prod }
+			{ datasource = variables.dsn.scheduler }
 		);
 	}
 
@@ -96,7 +98,7 @@ component threadSafe {
 				and context.status = 'Canceled'
 		",
 			{},
-			{ datasource = variables.dsn.prod }
+			{ datasource = variables.dsn.scheduler }
 		);
 	}
 
@@ -112,7 +114,7 @@ component threadSafe {
 				and person = left(created_by, 8)
 		",
 			{},
-			{ datasource = variables.dsn.prod }
+			{ datasource = variables.dsn.scheduler }
 		);
 	}
 
@@ -134,7 +136,7 @@ component threadSafe {
 			)
 		",
 			{},
-			{ datasource = variables.dsn.prod }
+			{ datasource = variables.dsn.scheduler }
 		);
 	}
 
@@ -152,7 +154,7 @@ component threadSafe {
 				and context_type = 'Enrollment'
 		",
 			{},
-			{ datasource = variables.dsn.prod }
+			{ datasource = variables.dsn.scheduler }
 		);
 	}
 
@@ -176,7 +178,7 @@ component threadSafe {
 			)
 		",
 			{},
-			{ datasource = variables.dsn.prod }
+			{ datasource = variables.dsn.scheduler }
 		);
 	}
 
@@ -188,7 +190,7 @@ component threadSafe {
 			SELECT prereg_start, sysdatetime() as now from product where product_id = @program
 		",
 			{},
-			{ datasource = variables.dsn.prod }
+			{ datasource = variables.dsn.scheduler }
 		)
 
 		local.start = local.range.prereg_start
@@ -216,7 +218,7 @@ component threadSafe {
 					and context.created < :end
 			",
 				{ start = { value = local.sliceStart, cfsqltype = "timestamp" }, end = { value = local.sliceEnd, cfsqltype = "timestamp" } },
-				{ datasource = variables.dsn.prod }
+				{ datasource = variables.dsn.scheduler }
 			);
 
 			local.json.starts.append(local.slice.total)
@@ -232,7 +234,7 @@ component threadSafe {
 					and event.occurred < :end
 			",
 				{ start = { value = local.sliceStart, cfsqltype = "timestamp" }, end = { value = local.sliceEnd, cfsqltype = "timestamp" } },
-				{ datasource = variables.dsn.prod }
+				{ datasource = variables.dsn.scheduler }
 			);
 
 			local.json.completions.append(local.slice.total)
@@ -257,7 +259,7 @@ component threadSafe {
 				)
 			",
 				{ start = { value = local.sliceStart, cfsqltype = "timestamp" }, end = { value = local.sliceEnd, cfsqltype = "timestamp" } },
-				{ datasource = variables.dsn.prod }
+				{ datasource = variables.dsn.scheduler }
 			);
 
 			local.json.assistedStarts.append(local.slice.total)
@@ -276,7 +278,7 @@ component threadSafe {
 					and context.created < :end
 			",
 				{ start = { value = local.sliceStart, cfsqltype = "timestamp" }, end = { value = local.sliceEnd, cfsqltype = "timestamp" } },
-				{ datasource = variables.dsn.prod }
+				{ datasource = variables.dsn.scheduler }
 			);
 
 			local.json.selfServeStarts.append(local.slice.total)
@@ -307,7 +309,7 @@ component threadSafe {
 			(select count(*) from FSY.DBO.session_preference sp where sp.program = @program and priority = 5) as p_5
 			",
 				{},
-				{ datasource = variables.dsn.prod }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -328,7 +330,7 @@ component threadSafe {
 			order by link_preference_size
 			",
 				{},
-				{ datasource = variables.dsn.prod }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -351,7 +353,7 @@ component threadSafe {
 			order by link_member_count
 			",
 				{},
-				{ datasource = variables.dsn.prod }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -383,7 +385,7 @@ component threadSafe {
 			) as singles
 			",
 				{},
-				{ datasource = variables.dsn.prod }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -398,21 +400,24 @@ component threadSafe {
 			-- how many people got assigned +
 			-- how many assignments were made per/min average +
 			-- how long did the scheduler run +
+
+			declare @minutes float = (cast((
+				select cast(datediff(second, min(context.created), max(context.created)) as float) / 60.0 from FSY.DBO.context
+					inner join product on product.product_id = context.product and product.master_type = 'Section'
+				where product.program = @program
+					and context_type = 'Enrollment'
+					and context.status <> 'Canceled'
+				) as float))
+
 			select
 			round(
 				cast((select count(context_id) from FSY.DBO.context
 					inner join product on product.product_id = context.product and product.master_type = 'Section'
-				where product.program = 80000082
+				where product.program = @program
 					and context_type = 'Enrollment'
 					and context.status <> 'Canceled'
 				) as float) /
-				cast((
-				select cast(datediff(second, min(context.created), max(context.created)) as float) / 60.0 from FSY.DBO.context
-					inner join product on product.product_id = context.product and product.master_type = 'Section'
-				where product.program = 80000082
-					and context_type = 'Enrollment'
-					and context.status <> 'Canceled'
-				) as float), 2
+				case when @minutes = 0 then 1 else @minutes end, 2
 			) as average_assignments_per_minute,
 			(
 			select count(context_id) as assigned from FSY.DBO.context inner join product on product.product_id = context.product and product.master_type = 'Section'
@@ -427,7 +432,7 @@ component threadSafe {
 			) as scheduler_duration_minutes
 			",
 				{},
-				{ datasource = variables.dsn.dev }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -440,12 +445,12 @@ component threadSafe {
 			select count(context.context_id) as preregistered_unassigned from context inner join event on event_object = 'context' and event_object_id = context_id and event_type = 'preRegReceived'
 			inner join session_preference sp on sp.prereg_link = context.prereg_link and sp.priority = 1
 			left join (
-					context section inner join product product_s on product_s.product_id = section.product and product_s.program = 80000082 and product_s.master_type = 'Section'
+					context section inner join product product_s on product_s.product_id = section.product and product_s.program = @program and product_s.master_type = 'Section'
 			) on section.person = context.person and section.context_type = 'Enrollment' and section.status <> 'Canceled'
-			where context.context_type = 'Enrollment' and context.status <> 'Canceled' and context.product = 80000082 and section.context_id is null
+			where context.context_type = 'Enrollment' and context.status <> 'Canceled' and context.product = @program and section.context_id is null
 			",
 				{},
-				{ datasource = variables.dsn.dev }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -461,35 +466,35 @@ component threadSafe {
 					select count(context.context_id) from context inner join product on product_id = product and product.master_type = 'Section' inner join context context_p on context_p.person = context.person and context_p.product = product.program
 					inner join session_preference sp on sp.prereg_link = context_p.prereg_link and sp.program = product.program and sp.priority = 1
 					inner join pm_session on pm_session.product = context.product
-					where product.program = 80000082 and cast(pm_session.participant_start_date as date) = sp.start_date and pm_session.pm_location = sp.pm_location and context.context_type = 'Enrollment' and context.status <> 'Canceled'
+					where product.program = @program and cast(pm_session.participant_start_date as date) = sp.start_date and pm_session.pm_location = sp.pm_location and context.context_type = 'Enrollment' and context.status <> 'Canceled'
 			) as got_1,
 			(
 					select count(context.context_id) from context inner join product on product_id = product and product.master_type = 'Section' inner join context context_p on context_p.person = context.person and context_p.product = product.program
 					inner join session_preference sp on sp.prereg_link = context_p.prereg_link and sp.program = product.program and sp.priority = 2
 					inner join pm_session on pm_session.product = context.product
-					where product.program = 80000082 and cast(pm_session.participant_start_date as date) = sp.start_date and pm_session.pm_location = sp.pm_location and context.context_type = 'Enrollment' and context.status <> 'Canceled'
+					where product.program = @program and cast(pm_session.participant_start_date as date) = sp.start_date and pm_session.pm_location = sp.pm_location and context.context_type = 'Enrollment' and context.status <> 'Canceled'
 			) as got_2,
 			(
 					select count(context.context_id) from context inner join product on product_id = product and product.master_type = 'Section' inner join context context_p on context_p.person = context.person and context_p.product = product.program
 					inner join session_preference sp on sp.prereg_link = context_p.prereg_link and sp.program = product.program and sp.priority = 3
 					inner join pm_session on pm_session.product = context.product
-					where product.program = 80000082 and cast(pm_session.participant_start_date as date) = sp.start_date and pm_session.pm_location = sp.pm_location and context.context_type = 'Enrollment' and context.status <> 'Canceled'
+					where product.program = @program and cast(pm_session.participant_start_date as date) = sp.start_date and pm_session.pm_location = sp.pm_location and context.context_type = 'Enrollment' and context.status <> 'Canceled'
 			) as got_3,
 			(
 					select count(context.context_id) from context inner join product on product_id = product and product.master_type = 'Section' inner join context context_p on context_p.person = context.person and context_p.product = product.program
 					inner join session_preference sp on sp.prereg_link = context_p.prereg_link and sp.program = product.program and sp.priority = 4
 					inner join pm_session on pm_session.product = context.product
-					where product.program = 80000082 and cast(pm_session.participant_start_date as date) = sp.start_date and pm_session.pm_location = sp.pm_location and context.context_type = 'Enrollment' and context.status <> 'Canceled'
+					where product.program = @program and cast(pm_session.participant_start_date as date) = sp.start_date and pm_session.pm_location = sp.pm_location and context.context_type = 'Enrollment' and context.status <> 'Canceled'
 			) as got_4,
 			(
 					select count(context.context_id) from context inner join product on product_id = product and product.master_type = 'Section' inner join context context_p on context_p.person = context.person and context_p.product = product.program
 					inner join session_preference sp on sp.prereg_link = context_p.prereg_link and sp.program = product.program and sp.priority = 5
 					inner join pm_session on pm_session.product = context.product
-					where product.program = 80000082 and cast(pm_session.participant_start_date as date) = sp.start_date and pm_session.pm_location = sp.pm_location and context.context_type = 'Enrollment' and context.status <> 'Canceled'
+					where product.program = @program and cast(pm_session.participant_start_date as date) = sp.start_date and pm_session.pm_location = sp.pm_location and context.context_type = 'Enrollment' and context.status <> 'Canceled'
 			) as got_5
 			",
 				{},
-				{ datasource = variables.dsn.dev }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -516,11 +521,11 @@ component threadSafe {
 			from FSY.DBO.product section
 			inner join option_item oi_f ON oi_f.section = section.product_id inner join product option_f on option_f.product_id = oi_f.item and option_f.housing_type = 'Female'
 			inner join option_item oi_m ON oi_m.section = section.product_id inner join product option_m on option_m.product_id = oi_m.item and option_m.housing_type = 'Male'
-			where section.program = 80000082 and section.master_type = 'Section' and section.status <> 'Canceled'
+			where section.program = @program and section.master_type = 'Section' and section.status <> 'Canceled'
 			) data
 			",
 				{},
-				{ datasource = variables.dsn.dev }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -549,12 +554,12 @@ component threadSafe {
 					from FSY.DBO.product section
 					inner join option_item oi_f ON oi_f.section = section.product_id inner join product option_f on option_f.product_id = oi_f.item and option_f.housing_type = 'Female'
 					inner join option_item oi_m ON oi_m.section = section.product_id inner join product option_m on option_m.product_id = oi_m.item and option_m.housing_type = 'Male'
-					where section.program = 80000082 and section.master_type = 'Section' and section.status <> 'Canceled'
+					where section.program = @program and section.master_type = 'Section' and section.status <> 'Canceled'
 					) data
 			) data2
 			",
 				{},
-				{ datasource = variables.dsn.dev }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -586,13 +591,13 @@ component threadSafe {
 					inner join pm_session ON pm_session.product = section.product_id
 					inner join option_item oi_f ON oi_f.section = section.product_id inner join product option_f on option_f.product_id = oi_f.item and option_f.housing_type = 'Female'
 					inner join option_item oi_m ON oi_m.section = section.product_id inner join product option_m on option_m.product_id = oi_m.item and option_m.housing_type = 'Male'
-					where section.program = 80000082 and section.master_type = 'Section' and section.status <> 'Canceled'
+					where section.program = @program and section.master_type = 'Section' and section.status <> 'Canceled'
 					) data
 			) data2
 			group by pm_location, start_date
 			",
 				{},
-				{ datasource = variables.dsn.dev }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -628,14 +633,14 @@ component threadSafe {
 							inner join pm_session ON pm_session.product = section.product_id
 							inner join option_item oi_f ON oi_f.section = section.product_id inner join product option_f on option_f.product_id = oi_f.item and option_f.housing_type = 'Female'
 							inner join option_item oi_m ON oi_m.section = section.product_id inner join product option_m on option_m.product_id = oi_m.item and option_m.housing_type = 'Male'
-							where section.program = 80000082 and section.master_type = 'Section' and section.status <> 'Canceled'
+							where section.program = @program and section.master_type = 'Section' and section.status <> 'Canceled'
 							) data
 					) data2
 					group by pm_location, start_date
 			) data3
 			",
 				{},
-				{ datasource = variables.dsn.dev }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -669,11 +674,11 @@ component threadSafe {
 			from FSY.DBO.product section
 			inner join option_item oi_f ON oi_f.section = section.product_id inner join product option_f on option_f.product_id = oi_f.item and option_f.housing_type = 'Female'
 			inner join option_item oi_m ON oi_m.section = section.product_id inner join product option_m on option_m.product_id = oi_m.item and option_m.housing_type = 'Male'
-			where section.program = 80000082 and section.master_type = 'Section' and section.status <> 'Canceled'
+			where section.program = @program and section.master_type = 'Section' and section.status <> 'Canceled'
 			) data
 			",
 				{},
-				{ datasource = variables.dsn.dev }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -709,12 +714,12 @@ component threadSafe {
 					from FSY.DBO.product section
 					inner join option_item oi_f ON oi_f.section = section.product_id inner join product option_f on option_f.product_id = oi_f.item and option_f.housing_type = 'Female'
 					inner join option_item oi_m ON oi_m.section = section.product_id inner join product option_m on option_m.product_id = oi_m.item and option_m.housing_type = 'Male'
-					where section.program = 80000082 and section.master_type = 'Section' and section.status <> 'Canceled'
+					where section.program = @program and section.master_type = 'Section' and section.status <> 'Canceled'
 					) data
 			) data2
 			",
 				{},
-				{ datasource = variables.dsn.dev }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -726,7 +731,10 @@ component threadSafe {
 
 			-- how many link groups (not my's) were placed vs not placed vs partially placed
 			/* */
-			select sum(placed) as placed, sum(unplaced) as unplaced, sum(partially_placed) as partially_placed
+			select
+				isNull(sum(placed), 0) as placed,
+				isNull(sum(unplaced), 0) as unplaced,
+				isNull(sum(partially_placed), 0) as partially_placed
 			from (
 			/* */
 			select
@@ -747,7 +755,7 @@ component threadSafe {
 											inner join pm_session ps on ps.pm_location = sp.pm_location and cast(ps.PARTICIPANT_START_DATE as date) = sp.start_date
 											inner join context section on section.product = ps.product and section.status <> 'Canceled' and section.context_type = 'Enrollment'
 									) on sp.prereg_link = context.prereg_link and section.person = context.person
-							where context.product = 80000082
+							where context.product = @program
 									and context.context_type = 'Enrollment'
 									and context.status <> 'Canceled'
 									and context.prereg_link not like 'my[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
@@ -759,7 +767,7 @@ component threadSafe {
 			/* */
 			",
 				{},
-				{ datasource = variables.dsn.dev }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -780,12 +788,12 @@ component threadSafe {
 					inner join session_preference sp on sp.prereg_link = context.prereg_link
 					inner join pm_session ps on ps.pm_location = sp.pm_location and cast(ps.PARTICIPANT_START_DATE as date) = sp.start_date
 					inner join context section on section.product = ps.product and section.status <> 'Canceled' and section.context_type = 'Enrollment' and section.person = context.person
-			where context.product = 80000082
+			where context.product = @program
 					and context.context_type = 'Enrollment'
 					and context.status <> 'Canceled'
 			",
 				{},
-				{ datasource = variables.dsn.dev }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -866,7 +874,7 @@ component threadSafe {
 					) AS unassigned_linked
 			",
 				{},
-				{ datasource = variables.dsn.dev }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -910,7 +918,7 @@ component threadSafe {
 								)
 								and section.context_id is not null
 							group by program_c.context_id
-            ) data
+						) data
 					) AS assigned_reserved,
 					(
 						select isnull(sum(contexts), 0)
@@ -945,7 +953,7 @@ component threadSafe {
 								)
 								and section.context_id is not null
 							group by program_c.context_id
-            ) data
+						) data
 					) AS assigned_regular,
 					(
 						select sum(contexts)
@@ -980,7 +988,7 @@ component threadSafe {
 								)
 								and section.context_id is null
 							group by program_c.context_id
-            ) data
+						) data
 					) AS unassigned_reserved,
 					(
 						select sum(contexts)
@@ -1015,11 +1023,11 @@ component threadSafe {
 								)
 								and section.context_id is null
 							group by program_c.context_id
-            ) data
+						) data
 					) AS unassigned_regular
 			",
 				{},
-				{ datasource = variables.dsn.dev }
+				{ datasource = variables.dsn.scheduler }
 			)
 		);
 
@@ -1048,23 +1056,10 @@ component threadSafe {
 
 	// Testing utils
 
-	/*
-	+ create program
-	+ set cntl_value to created program
-	+ create section product with m/f housing linked via option_item/group
-	+ create person
-	+ create prereg program context with a given prereg_link value
-	+ create preRegReceived event for program context
-	+ create pm_location
-	+ create session_preference records for a given prereg_link value
-	+ create ward
-	+ create stake
-	create pm_session
-	create fsy_session_unit records for assignments (optionally w/ reservation numbers)
-	teardown
-	*/
+	// begin individual setup helper functions
 
-	public numeric function createProgram() {
+	private numeric function createProgram() {
+		application.progress.append({ currentStep: "createProgram", tick: getTickCount() })
 		QueryExecute(
 			"
 			insert into product (
@@ -1074,6 +1069,12 @@ component threadSafe {
 				department,
 				product_type,
 				master_type,
+				start_date,
+				end_date,
+				web_enroll_start,
+				web_enroll_end,
+				enroll_start,
+				enroll_end,
 				include_in_enrollment_total,
 				created_by
 			)
@@ -1084,13 +1085,21 @@ component threadSafe {
 				department,
 				product_type,
 				master_type,
+				start_date,
+				end_date,
+				web_enroll_start,
+				web_enroll_end,
+				enroll_start,
+				enroll_end,
 				include_in_enrollment_total,
 				created_by
-			from product where product_id = 80000082
+			from product where product_id = @program
 		",
 			{},
 			{ datasource = variables.dsn.local, result = "local.result" }
 		);
+
+		writedump({ program: local.result.generatedkey })
 
 		return local.result.generatedkey;
 	}
@@ -1098,6 +1107,9 @@ component threadSafe {
 	public void function setControlValueToCreatedProgram(
 		numeric product_id
 	) {
+		if (isDefined("application.progress"))
+			application.progress.append({ currentStep: "setControlValue", tick: getTickCount() })
+
 		QueryExecute(
 			"
 			update cntl_value set value = :product_id, updated_by = 'FSY-1333' where control = 'current_fsy_program'
@@ -1107,11 +1119,13 @@ component threadSafe {
 		);
 	}
 
-	public struct function createFullSection(
+	private struct function createFullSection(
 		required numeric program,
 		numeric female = 10,
 		numeric male = 10
 	) {
+		application.progress.append({ currentStep: "createFullSection", tick: getTickCount() })
+
 		local.data = {}
 
 		// ensure unique short_title
@@ -1143,6 +1157,12 @@ component threadSafe {
 				department,
 				product_type,
 				master_type,
+				start_date,
+				end_date,
+				web_enroll_start,
+				web_enroll_end,
+				enroll_start,
+				enroll_end,
 				program,
 				include_in_enrollment_total,
 				created_by
@@ -1154,12 +1174,23 @@ component threadSafe {
 				department,
 				product_type,
 				'Section',
+				start_date,
+				end_date,
+				web_enroll_start,
+				web_enroll_end,
+				:enroll_start,
+				:enroll_end,
 				:program,
 				include_in_enrollment_total,
 				created_by
-			from product where product_id = 80000082
+			from product where product_id = @program
 		",
-			{ next = local.next, program = arguments.program },
+			{
+				next = local.next,
+				program = arguments.program,
+				enroll_start = { value = now(), cfsqltype="timestamp"},
+				enroll_end = { value = dateadd("m", 1, now()), cfsqltype="timestamp"}
+			},
 			{ datasource = variables.dsn.local, result = "local.result" }
 		)
 
@@ -1197,7 +1228,7 @@ component threadSafe {
 				:program,
 				include_in_enrollment_total,
 				created_by
-			from product where product_id = 80000082
+			from product where product_id = @program
 		",
 			{ next = local.next, program = arguments.program, max_enroll = arguments.female },
 			{ datasource = variables.dsn.local, result = "local.result" }
@@ -1237,7 +1268,7 @@ component threadSafe {
 				:program,
 				include_in_enrollment_total,
 				created_by
-			from product where product_id = 80000082
+			from product where product_id = @program
 		",
 			{ next = local.next, program = arguments.program, max_enroll = arguments.male },
 			{ datasource = variables.dsn.local, result = "local.result" }
@@ -1261,7 +1292,7 @@ component threadSafe {
 				1,
 				1,
 				created_by
-			from product where product_id = 80000082
+			from product where product_id = @program
 		",
 			{ section = local.data.section },
 			{ datasource = variables.dsn.local, result = "local.result" }
@@ -1283,7 +1314,7 @@ component threadSafe {
 				'Housing',
 				:item,
 				created_by
-			from product where product_id = 80000082
+			from product where product_id = @program
 		",
 			{ section = local.data.section, item = local.data.female },
 			{ datasource = variables.dsn.local, result = "local.result" }
@@ -1305,7 +1336,7 @@ component threadSafe {
 				'Housing',
 				:item,
 				created_by
-			from product where product_id = 80000082
+			from product where product_id = @program
 		",
 			{ section = local.data.section, item = local.data.male },
 			{ datasource = variables.dsn.local, result = "local.result" }
@@ -1316,9 +1347,11 @@ component threadSafe {
 		return local.data
 	}
 
-	public numeric function createPerson(
+	private numeric function createPerson(
 		required string gender
 	) {
+		application.progress.append({ currentStep: "createPerson", tick: getTickCount() })
+
 		QueryExecute(
 			"
 			insert into person (first_name, last_name, gender, birthdate, lds_account_id, created_by)
@@ -1331,17 +1364,27 @@ component threadSafe {
 		return local.result.generatedKey
 	}
 
-	public numeric function createProgramContext(
+	private numeric function createProgramContext(
 		required numeric program,
 		required numeric person,
+		required numeric ward,
+		required numeric stake,
 		string prereg_link = ""
 	) {
+		application.progress.append({ currentStep: "createProgramContext", tick: getTickCount() })
+
 		QueryExecute(
 			"
-			insert into context (person, product, context_type, status, pending_status, prereg_link, created_by)
-			values (:person, :product, 'Enrollment', 'Reserved', 'Active', :prereg_link, 'FSY-1333')
+			insert into context (person, product, context_type, status, prereg_link, lds_unit_no, stake, created_by)
+			values (:person, :product, 'Enrollment', 'Active', :prereg_link, :ward, :stake, 'FSY-1333')
 		",
-			{ person = arguments.person, product = arguments.program, prereg_link = arguments.prereg_link },
+			{
+				person = arguments.person,
+				product = arguments.program,
+				prereg_link = arguments.prereg_link,
+				ward = arguments.ward,
+				stake = arguments.stake
+			},
 			{ datasource = variables.dsn.local, result = "local.result" }
 		);
 
@@ -1357,9 +1400,11 @@ component threadSafe {
 		return local.result.generatedkey
 	}
 
-	public void function createPreRegReceivedEvent(
+	private void function createPreRegReceivedEvent(
 		required numeric context_id
 	) {
+		application.progress.append({ currentStep: "createPreRegReceivedEvent", tick: getTickCount() })
+
 		QueryExecute(
 			"
 			insert into event (event_object, event_object_id, event_type) values ('CONTEXT', :context_id, 'preRegReceived')
@@ -1369,7 +1414,9 @@ component threadSafe {
 		);
 	}
 
-	public numeric function createPMLocation() {
+	private numeric function createPMLocation() {
+		application.progress.append({ currentStep: "createPMLocation", tick: getTickCount() })
+
 		// TODO: see if country is necessary - hopefully that'll just be on the product ¯\_(ツ)_/¯
 		QueryExecute(
 			"
@@ -1382,13 +1429,15 @@ component threadSafe {
 		return local.result.generatedkey
 	}
 
-	public void function createSessionPreference(
+	private void function createSessionPreference(
 		required numeric program,
 		required string prereg_link,
 		required numeric pm_location,
 		required string start_date,
 		numeric priority = 1
 	) {
+		application.progress.append({ currentStep: "createSessionPreference", tick: getTickCount() })
+
 		QueryExecute(
 			"
 			insert into session_preference (program, prereg_link, pm_location, start_date, priority, created_by)
@@ -1399,9 +1448,11 @@ component threadSafe {
 		);
 	}
 
-	public numeric function createWard(
+	private numeric function createWard(
 		required numeric stake
 	) {
+		application.progress.append({ currentStep: "createWard", tick: getTickCount() })
+
 		// ensure unique unit_number
 		local.next = QueryExecute(
 			"
@@ -1425,7 +1476,9 @@ component threadSafe {
 		return local.next.unit_number
 	}
 
-	public numeric function createStake() {
+	private numeric function createStake() {
+		application.progress.append({ currentStep: "createStake", tick: getTickCount() })
+
 		// ensure unique unit_number
 		local.next = QueryExecute(
 			"
@@ -1450,19 +1503,149 @@ component threadSafe {
 		return local.next.unit_number
 	}
 
-	public void function createPMSession() {
-	}
-
-	public void function createFSURecords(
-		male = 0,
-		female = 0
+	private numeric function createPMSession(
+		required numeric pm_location,
+		required string start_date,
+		required numeric product
 	) {
+		application.progress.append({ currentStep: "createPMSession", tick: getTickCount() })
+
+		QueryExecute(
+			"
+			insert into pm_session (title, department, session_type, product, pm_location, start_date, end_date, participant_start_date, participant_end_date, created_by)
+			values (:title, 'FSY', 'FSY', :product, :pm_location, :start_date, :end_date, :participant_start_date, :participant_end_date, 'FSY-1333')
+		",
+			{
+				title = "session_#arguments.pm_location#_#arguments.start_date#",
+				product = arguments.product,
+				pm_location = arguments.pm_location,
+				start_date = dateFormat(dateAdd("d", -1, arguments.start_date), "yyyy-mm-dd"),
+				end_date = dateFormat(dateAdd("d", 6, arguments.start_date), "yyyy-mm-dd"),
+				participant_start_date = arguments.start_date,
+				participant_end_date = dateFormat(dateAdd("d", 5, arguments.start_date), "yyyy-mm-dd")
+			},
+			{ datasource = variables.dsn.local, result = "local.result" }
+		);
+
+		return local.result.generatedkey
 	}
 
-	public void function teardown() {
+	private void function createFSURecords(
+		required numeric pm_session,
+		required numeric fsy_unit,
+		numeric female = 0,
+		numeric male = 0
+	) {
+		application.progress.append({ currentStep: "createFSURecords", tick: getTickCount() })
+
+		queryExecute("
+			insert into fsy_session_unit (pm_session, fsy_unit, female, male, source, created_by)
+			values (:pm_session, :fsy_unit, :female, :male, 'Participant', 'FSY-1333')
+		", {
+			pm_session = arguments.pm_session,
+			fsy_unit = arguments.fsy_unit,
+			female = { value=arguments.female, cfsqltype="cf_sql_numeric", null=(arguments.female == 0) },
+			male = { value=arguments.male, cfsqltype="cf_sql_numeric", null=(arguments.male == 0) }
+		}, { datasource = variables.dsn.local });
+	}
+
+	// END individual setup helper functions
+
+	// Begin actual test case setup functions
+
+	// just put all the above functions through their paces
+	private void function kitchenSink() {
+		program = createProgram()
+		setControlValueToCreatedProgram(program)
+		writedump(createFullSection(program))
+		stake = createStake()
+		ward = createWard(stake)
+		writedump({ ward: ward, stake: stake })
+		person = createPerson('M')
+		program_c = createProgramContext(program, person, ward, stake)
+		createPreRegReceivedEvent(program_c)
+		pm_location = createPMLocation()
+		start_date = '2024-06-01'
+		prereg_link = "my#program_c#" // for example, but could use a non-my passed in earlier
+		createSessionPreference(program, prereg_link, pm_location, start_date)
+		pm_session = createPMSession(pm_location, start_date)
+		writedump({ pm_session: pm_session })
+		createFSURecords(pm_session, stake)
+	}
+
+	private void function happyPath() {
+		program = createProgram()
+		setControlValueToCreatedProgram(program)
+		sectionInfo = createFullSection(program)
+		writedump(sectionInfo)
+		stake = createStake()
+		ward = createWard(stake)
+		writedump({ ward: ward, stake: stake })
+		person = createPerson('M')
+		program_c = createProgramContext(program, person, ward, stake)
+		createPreRegReceivedEvent(program_c)
+		pm_location = createPMLocation()
+		start_date = '2024-06-01'
+		prereg_link = "my#program_c#" // for example, but could use a non-my passed in earlier
+		createSessionPreference(program, prereg_link, pm_location, start_date)
+		pm_session = createPMSession(pm_location, start_date, sectionInfo.section)
+		writedump({ pm_session: pm_session })
+		createFSURecords(pm_session, stake)
+	}
+
+	/*
+		All the test cases
+
+		Happy path (1 person; they get assigned)
+
+		assign people in a random order (to make it fair)
+
+penalize link groups (to make it unfair)
+
+never sell more than max_enroll beds
+
+honor unit reservations
+
+everyone in a given link is placed, or no one in the link is placed
+
+if a link is placed, all the members are placed in the same pm_session (not split up over concurrent sessions)
+
+we give people their highest priority preference possible (i.e., after randomizing assign as many 1st priorities as we can, then 2, then 3, etc.)
+
+maximize the number of people we place overall (without violating any of the above rules)
+	*/
+
+	// END actual test case setup functions
+
+	// Main test setup function; pass in whichever test case function name you wish to run
+	public void function setup(string testCase = "kitchenSink") {
+		application.progress = { start: getTickCount(), tick: getTickCount() }
+
+		teardown()
+
+		invoke("", arguments.testCase)
+		//teardown()
+	}
+
+	private void function teardown() {
+		application.progress.append({ currentStep: "teardown", tick: getTickCount() })
+
+		QueryExecute(
+			"
+			delete fsy_session_unit where created_by = 'FSY-1333'
+		",
+			{},
+			{ datasource = variables.dsn.local }
+		);
 		QueryExecute(
 			"
 			delete pm_session where created_by = 'FSY-1333'
+		",
+			{},
+			{ datasource = variables.dsn.local }
+		);
+		QueryExecute(
+			"
 			delete session_preference where created_by = 'FSY-1333'
 			delete pm_location where created_by = 'FSY-1333'
 			delete event where event_object = 'CONTEXT' and event_object_id in (select context_id from context where person in (select person_id from person where first_name = 'First_1333' and last_name = 'Last_1333'))
@@ -1480,4 +1663,31 @@ component threadSafe {
 		);
 	}
 
+	public void function undoPreregAssignments(required numeric program) {
+		// this resets what the scheduler does when it runs by deleting all the contexts it created
+		// hard-coded, because all the above setup stuff is 1-off w/ a new program and all-new data every time so it's completely independent
+		queryExecute("
+			delete context where context_id in
+			(
+				select context.context_id from FSY.DBO.context
+					inner join product on product.product_id = context.product
+					left join emergency_info ei on ei.context = context.context_id
+					left join context housing on housing.choice_for = context.context_id
+					left join emergency_info eio on eio.context = context.context_id
+				where product.program = :program
+					and context.context_type = 'Enrollment'
+					and ei.context is null
+					and eio.context is null
+			)
+		", { program: arguments.program}, { datasource = variables.dsn.local });
+	}
+
+	public struct function preregSetupResults() {
+		local.program = queryExecute("select value from cntl_value where control = 'current_fsy_program'", {}, { datasource = variables.dsn.local }).value
+
+		return {
+			programProductID = local.program,
+			program = variables.utils.queryToStruct(queryExecute("select * from product where product_id = :product_id", { product_id: local.program }, { datasource = variables.dsn.local }))
+		}
+	}
 }

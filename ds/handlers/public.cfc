@@ -59,6 +59,9 @@ component extends="coldbox.system.EventHandler" {
 
 		try {
 			FileWrite(local.file, SerializeJSON(local.data))
+		}
+		catch (any e) {
+			getModel("utils").logError(e, true)
 		} finally {
 			FileClose(local.file);
 		}
