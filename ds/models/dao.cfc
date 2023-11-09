@@ -1596,23 +1596,50 @@ component threadSafe {
 	/*
 		All the test cases
 
-		Happy path (1 person; they get assigned)
+		*** Happy path (ignore this one; testing whether the test data setup code can output something the actual scheduler can successfully work with; not so useful to run if all other below cases are being run)
+			1 session; 1 bed; 1 participant; they get assigned
 
-		assign people in a random order (to make it fair)
+		*** assign people in a random order (to make it fair)
+				... best tested with a few runthroughs and take the average
+				1 session; 1 bed; 2 participants = ~50% of the time each is placed and the other not
 
-penalize link groups (to make it unfair)
+		*** penalize link groups (to make it unfair)
+				... best tested with a few runthroughs and take the average
+				1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 12 unlinked participants = 20 people placed
+				1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 20 unlinked participants = group penalty applies, 20 people placed
+				1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 100 unlinked participants = group penalty more apparent, 20 people placed
 
-never sell more than max_enroll beds
+		*** never sell more than max_enroll beds
+				1 session; 1 bed; 2 participants = 1 placed; 1 not placed
 
-honor unit reservations
+		*** honor unit reservations
+				1 session; 1 beds; 1 participant; 1 other unit w/ 1 open reserved bed = 1 not placed
+				1 session; 2 beds; 2 participants; 1 other unit w/ 1 open reserved bed = 1 placed; 1 not placed
+				1 session; 2 beds; 1 participant; P's unit w/ 1 open reserved bed; 1 other unit w/ 1 open reserved bed = 1 placed
+				1 session; 2 beds; 1* participant; P's unit w/ 1 filled reserved bed; 1 other unit w/ 1 open reserved bed = 1 not placed
+				1 session; 3 beds; 1* participant; P's unit w/ 1 filled reserved bed; 1 other unit w/ 1 open reserved bed = 1 placed
 
-everyone in a given link is placed, or no one in the link is placed
+		*** everyone in a given link is placed, or no one in the link is placed
+				1 session; 1 bed; 2 linked participants; 2 not placed
+				1 session; 2 beds; 2 linked participants; 2 placed
+				1 session; 1 M bed/ 1 F bed; 2 linked participants, M and F; 2 placed
+				1 session; 2 M bed; 2 linked participants, M and F; 2 not placed
+				2 sessions; 1 bed each; 2 linked participants; 2 not placed
 
-if a link is placed, all the members are placed in the same pm_session (not split up over concurrent sessions)
+		*** if a link is placed, all the members are placed in the same pm_session (not split up over concurrent sessions)
+				2 sessions; 1 full bed and 1 open bed each; 2 linked participants = 2 not placed
+				2 sessions; 2 open beds each; 2 linked participants = 2 placed same session
 
-we give people their highest priority preference possible (i.e., after randomizing assign as many 1st priorities as we can, then 2, then 3, etc.)
+		*** we give people their highest priority preference possible (i.e., after randomizing assign as many 1st priorities as we can, then 2, then 3, etc.)
+				1 session A, 1 session B; 1 open bed each session; 3 participants, each w/ p1 A, p2 B = 1 placed in A, 1 placed in B, 1 not placed
+				1 session A, 1 session B; 2 open beds A, 1 open bed B; 2 participants X and Y, each w/ p1 A; 1 participant Z w/ p1 B, p2 A = X and Y placed in A, Z placed in B
+				1 session A, 1 session B; 2 open beds A, 1 full bed B; 2 participants X and Y, each w/ p1 A; 1 participant Z w/ p1 B, p2 A = X and Y placed in A, Z not placed
+				2 placetimes A and B; A is full; 1 participant w/ p1 A, p2 B = 1 placed in B
+				5 sessions; 1 participant; cycle through p1-5 for each session = placed in the right one each time
 
-maximize the number of people we place overall (without violating any of the above rules)
+		*** maximize the number of people we place overall (without violating any of the above rules)
+				... this may be best tested by doing the full run
+
 	*/
 
 	// END actual test case setup functions
