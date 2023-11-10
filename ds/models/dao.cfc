@@ -5,6 +5,7 @@ component threadSafe {
 	variables.dsn = { prod = "fsyweb_pro", dev = "fsyweb_dev", local = "fsyweb_local" };
 
 	variables.dsn.scheduler = variables.dsn.local
+	variables.realProgram = 80000082
 
 	public query function countStarted() {
 		return QueryExecute(
@@ -1058,50 +1059,52 @@ component threadSafe {
 
 	// begin individual setup helper functions
 
-	private numeric function createProgram() {
+	function createProgram() {
 		application.progress.append({ currentStep: "createProgram", tick: getTickCount() })
 
 		QueryExecute(
 			"
 			insert into product (
-				status,
-				short_title,
-				title,
-				department,
-				product_type,
-				master_type,
-				start_date,
-				end_date,
-				web_enroll_start,
-				web_enroll_end,
-				enroll_start,
-				enroll_end,
-				include_in_enrollment_total,
-				created_by
-			)
-			select
-				status,
-				concat(short_title, '_1333'),
-				concat(title, '_1333'),
-				department,
-				product_type,
-				master_type,
-				start_date,
-				end_date,
-				web_enroll_start,
-				web_enroll_end,
-				enroll_start,
-				enroll_end,
-				include_in_enrollment_total,
-				created_by
-			from product where product_id = 80000082 -- we'll borrow a bunch of data from the real program
+			status,
+			short_title,
+			title,
+			department,
+			product_type,
+			master_type,
+			start_date,
+			end_date,
+			web_enroll_start,
+			web_enroll_end,
+			enroll_start,
+			enroll_end,
+			include_in_enrollment_total,
+			created_by
+		)
+		select
+			status,
+			concat(short_title, '_1333'),
+			concat(title, '_1333'),
+			department,
+			product_type,
+			master_type,
+			start_date,
+			end_date,
+			web_enroll_start,
+			web_enroll_end,
+			enroll_start,
+			enroll_end,
+			include_in_enrollment_total,
+			created_by
+			from product where product_id = :realProgram
 		",
-			{},
-			{ datasource = variables.dsn.local, result = "local.result" }
+			{ realProgram = variables.realProgram },
+			{
+				datasource = variables.dsn.local,
+				result = "local.result"
+			}
 		);
 
-		writedump({ program: local.result })
-		writedump({ program: local.result.generatedkey })
+		writeDump({ program: local.result.generatedKey})
 
 		return local.result.generatedkey;
 	}
@@ -1185,11 +1188,12 @@ component threadSafe {
 				:program,
 				include_in_enrollment_total,
 				created_by
-			from product where product_id = @program
+			from product where product_id = :realProgram
 		",
 			{
 				next = local.next,
 				program = arguments.program,
+				realProgram = variables.realProgram,
 				enroll_start = { value = now(), cfsqltype="timestamp"},
 				enroll_end = { value = dateadd("m", 1, now()), cfsqltype="timestamp"}
 			},
@@ -1230,9 +1234,14 @@ component threadSafe {
 				:program,
 				include_in_enrollment_total,
 				created_by
-			from product where product_id = @program
+			from product where product_id = :realProgram
 		",
-			{ next = local.next, program = arguments.program, max_enroll = arguments.female },
+			{
+				next = local.next,
+				program = arguments.program,
+				realProgram = variables.realProgram,
+				max_enroll = arguments.female
+			},
 			{ datasource = variables.dsn.local, result = "local.result" }
 		)
 
@@ -1270,9 +1279,14 @@ component threadSafe {
 				:program,
 				include_in_enrollment_total,
 				created_by
-			from product where product_id = @program
+			from product where product_id = :realProgram
 		",
-			{ next = local.next, program = arguments.program, max_enroll = arguments.male },
+			{
+				next = local.next,
+				program = arguments.program,
+				realProgram = variables.realProgram,
+				max_enroll = arguments.male
+			},
 			{ datasource = variables.dsn.local, result = "local.result" }
 		)
 
@@ -1294,9 +1308,13 @@ component threadSafe {
 				1,
 				1,
 				created_by
-			from product where product_id = @program
+			from product where product_id = :realProgram
 		",
-			{ section = local.data.section },
+			{
+				realProgram = variables.realProgram,
+				section = local.data.section
+
+			},
 			{ datasource = variables.dsn.local, result = "local.result" }
 		)
 
@@ -1316,9 +1334,13 @@ component threadSafe {
 				'Housing',
 				:item,
 				created_by
-			from product where product_id = @program
+			from product where product_id = :realProgram
 		",
-			{ section = local.data.section, item = local.data.female },
+			{
+				realProgram = variables.realProgram,
+				section = local.data.section,
+				item = local.data.female
+			},
 			{ datasource = variables.dsn.local, result = "local.result" }
 		)
 
@@ -1338,9 +1360,13 @@ component threadSafe {
 				'Housing',
 				:item,
 				created_by
-			from product where product_id = @program
+			from product where product_id = :realProgram
 		",
-			{ section = local.data.section, item = local.data.male },
+			{
+				realProgram = variables.realProgram,
+				section = local.data.section,
+				item = local.data.male
+			},
 			{ datasource = variables.dsn.local, result = "local.result" }
 		)
 
