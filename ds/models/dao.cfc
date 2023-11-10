@@ -1133,6 +1133,7 @@ component threadSafe {
 		application.progress.append({ currentStep: "createFullSection", tick: getTickCount() })
 
 		local.data = {}
+		local.time = now()
 
 		// ensure unique short_title
 		local.result = QueryExecute(
@@ -1195,8 +1196,8 @@ component threadSafe {
 				next = local.next,
 				program = arguments.program,
 				realProgram = variables.realProgram,
-				enroll_start = { value = now(), cfsqltype="timestamp"},
-				enroll_end = { value = dateadd("m", 1, now()), cfsqltype="timestamp"}
+				enroll_start = { value = local.time, cfsqltype="timestamp"},
+				enroll_end = { value = dateadd("m", 1, local.time), cfsqltype="timestamp"}
 			},
 			{ datasource = variables.dsn.local, result = "local.result" }
 		)
@@ -1215,8 +1216,15 @@ component threadSafe {
 				master_type,
 				option_type,
 				housing_type,
+				start_date,
+				end_date,
+				web_enroll_start,
+				web_enroll_end,
+				enroll_start,
+				enroll_end,
 				max_space,
 				max_enroll,
+				gender,
 				program,
 				include_in_enrollment_total,
 				created_by
@@ -1230,8 +1238,15 @@ component threadSafe {
 				'Option',
 				'Housing',
 				'Female',
+				start_date,
+				end_date,
+				web_enroll_start,
+				web_enroll_end,
+				:enroll_start,
+				:enroll_end,
 				:max_enroll,
 				:max_enroll,
+				'F',
 				:program,
 				include_in_enrollment_total,
 				created_by
@@ -1241,7 +1256,9 @@ component threadSafe {
 				next = local.next,
 				program = arguments.program,
 				realProgram = variables.realProgram,
-				max_enroll = arguments.female
+				max_enroll = arguments.female,
+				enroll_start = { value = local.time, cfsqltype="timestamp"},
+				enroll_end = { value = dateadd("m", 1, local.time), cfsqltype="timestamp"}
 			},
 			{ datasource = variables.dsn.local, result = "local.result" }
 		)
@@ -1260,8 +1277,15 @@ component threadSafe {
 				master_type,
 				option_type,
 				housing_type,
+				start_date,
+				end_date,
+				web_enroll_start,
+				web_enroll_end,
+				enroll_start,
+				enroll_end,
 				max_space,
 				max_enroll,
+				gender,
 				program,
 				include_in_enrollment_total,
 				created_by
@@ -1275,8 +1299,15 @@ component threadSafe {
 				'Option',
 				'Housing',
 				'Male',
+				start_date,
+				end_date,
+				web_enroll_start,
+				web_enroll_end,
+				:enroll_start,
+				:enroll_end,
 				:max_enroll,
 				:max_enroll,
+				'M',
 				:program,
 				include_in_enrollment_total,
 				created_by
@@ -1286,7 +1317,9 @@ component threadSafe {
 				next = local.next,
 				program = arguments.program,
 				realProgram = variables.realProgram,
-				max_enroll = arguments.male
+				max_enroll = arguments.male,
+				enroll_start = { value = local.time, cfsqltype="timestamp"},
+				enroll_end = { value = dateadd("m", 1, local.time), cfsqltype="timestamp"}
 			},
 			{ datasource = variables.dsn.local, result = "local.result" }
 		)
