@@ -1060,7 +1060,8 @@ component threadSafe {
 
 	private numeric function createProgram() {
 		application.progress.append({ currentStep: "createProgram", tick: getTickCount() })
-		QueryExecute(
+
+		local.query = QueryExecute(
 			"
 			insert into product (
 				status,
@@ -1093,12 +1094,13 @@ component threadSafe {
 				enroll_end,
 				include_in_enrollment_total,
 				created_by
-			from product where product_id = @program
+			from product where product_id = 80000082 -- we'll borrow a bunch of data from the real program
 		",
 			{},
 			{ datasource = variables.dsn.local, result = "local.result" }
 		);
 
+		writedump({ program: local.result, query: local.query })
 		writedump({ program: local.result.generatedkey })
 
 		return local.result.generatedkey;
@@ -1596,51 +1598,233 @@ component threadSafe {
 	/*
 		All the test cases
 
-		*** Happy path (ignore this one; testing whether the test data setup code can output something the actual scheduler can successfully work with; not so useful to run if all other below cases are being run)
-			1 session; 1 bed; 1 participant; they get assigned
+		0 *** Happy path (ignore this one; testing whether the test data setup code can output something the actual scheduler can successfully work with; not so useful to run if all other below cases are being run)
+				a - 1 session; 1 bed; 1 participant; they get assigned
 
-		*** assign people in a random order (to make it fair)
+		1 *** assign people in a random order (to make it fair)
 				... best tested with a few runthroughs and take the average
-				1 session; 1 bed; 2 participants = ~50% of the time each is placed and the other not
+				a - 1 session; 1 bed; 2 participants = ~50% of the time each is placed and the other not
 
-		*** penalize link groups (to make it unfair)
+		2 *** penalize link groups (to make it unfair)
 				... best tested with a few runthroughs and take the average
-				1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 12 unlinked participants = 20 people placed
-				1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 20 unlinked participants = group penalty applies, 20 people placed
-				1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 100 unlinked participants = group penalty more apparent, 20 people placed
+				a - 1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 12 unlinked participants = 20 people placed
+				b - 1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 20 unlinked participants = group penalty applies, 20 people placed
+				c - 1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 100 unlinked participants = group penalty more apparent, 20 people placed
 
-		*** never sell more than max_enroll beds
-				1 session; 1 bed; 2 participants = 1 placed; 1 not placed
+		3 *** never sell more than max_enroll beds
+				a - 1 session; 1 bed; 2 participants = 1 placed; 1 not placed
 
-		*** honor unit reservations
-				1 session; 1 beds; 1 participant; 1 other unit w/ 1 open reserved bed = 1 not placed
-				1 session; 2 beds; 2 participants; 1 other unit w/ 1 open reserved bed = 1 placed; 1 not placed
-				1 session; 2 beds; 1 participant; P's unit w/ 1 open reserved bed; 1 other unit w/ 1 open reserved bed = 1 placed
-				1 session; 2 beds; 1* participant; P's unit w/ 1 filled reserved bed; 1 other unit w/ 1 open reserved bed = 1 not placed
-				1 session; 3 beds; 1* participant; P's unit w/ 1 filled reserved bed; 1 other unit w/ 1 open reserved bed = 1 placed
+		4 *** honor unit reservations
+				a - 1 session; 1 beds; 1 participant; 1 other unit w/ 1 open reserved bed = 1 not placed
+				b - 1 session; 2 beds; 2 participants; 1 other unit w/ 1 open reserved bed = 1 placed; 1 not placed
+				c - 1 session; 2 beds; 1 participant; P's unit w/ 1 open reserved bed; 1 other unit w/ 1 open reserved bed = 1 placed
+				d - 1 session; 2 beds; 1* participant; P's unit w/ 1 filled reserved bed; 1 other unit w/ 1 open reserved bed = 1 not placed
+				e - 1 session; 3 beds; 1* participant; P's unit w/ 1 filled reserved bed; 1 other unit w/ 1 open reserved bed = 1 placed
 
-		*** everyone in a given link is placed, or no one in the link is placed
-				1 session; 1 bed; 2 linked participants; 2 not placed
-				1 session; 2 beds; 2 linked participants; 2 placed
-				1 session; 1 M bed/ 1 F bed; 2 linked participants, M and F; 2 placed
-				1 session; 2 M bed; 2 linked participants, M and F; 2 not placed
-				2 sessions; 1 bed each; 2 linked participants; 2 not placed
+		5 *** everyone in a given link is placed, or no one in the link is placed
+				a - 1 session; 1 bed; 2 linked participants; 2 not placed
+				b - 1 session; 2 beds; 2 linked participants; 2 placed
+				c - 1 session; 1 M bed/ 1 F bed; 2 linked participants, M and F; 2 placed
+				d - 1 session; 2 M bed; 2 linked participants, M and F; 2 not placed
+				e - 2 sessions; 1 bed each; 2 linked participants; 2 not placed
 
-		*** if a link is placed, all the members are placed in the same pm_session (not split up over concurrent sessions)
-				2 sessions; 1 full bed and 1 open bed each; 2 linked participants = 2 not placed
-				2 sessions; 2 open beds each; 2 linked participants = 2 placed same session
+		6 *** if a link is placed, all the members are placed in the same pm_session (not split up over concurrent sessions)
+				a - 2 sessions; 1 full bed and 1 open bed each; 2 linked participants = 2 not placed
+				b - 2 sessions; 2 open beds each; 2 linked participants = 2 placed same session
 
-		*** we give people their highest priority preference possible (i.e., after randomizing assign as many 1st priorities as we can, then 2, then 3, etc.)
-				1 session A, 1 session B; 1 open bed each session; 3 participants, each w/ p1 A, p2 B = 1 placed in A, 1 placed in B, 1 not placed
-				1 session A, 1 session B; 2 open beds A, 1 open bed B; 2 participants X and Y, each w/ p1 A; 1 participant Z w/ p1 B, p2 A = X and Y placed in A, Z placed in B
-				1 session A, 1 session B; 2 open beds A, 1 full bed B; 2 participants X and Y, each w/ p1 A; 1 participant Z w/ p1 B, p2 A = X and Y placed in A, Z not placed
-				2 placetimes A and B; A is full; 1 participant w/ p1 A, p2 B = 1 placed in B
-				5 sessions; 1 participant; cycle through p1-5 for each session = placed in the right one each time
+		7 *** we give people their highest priority preference possible (i.e., after randomizing assign as many 1st priorities as we can, then 2, then 3, etc.)
+				a - 1 session A, 1 session B; 1 open bed each session; 3 participants, each w/ p1 A, p2 B = 1 placed in A, 1 placed in B, 1 not placed
+				b - 1 session A, 1 session B; 2 open beds A, 1 open bed B; 2 participants X and Y, each w/ p1 A; 1 participant Z w/ p1 B, p2 A = X and Y placed in A, Z placed in B
+				c - 1 session A, 1 session B; 2 open beds A, 1 full bed B; 2 participants X and Y, each w/ p1 A; 1 participant Z w/ p1 B, p2 A = X and Y placed in A, Z not placed
+				d - 2 placetimes A and B; A is full; 1 participant w/ p1 A, p2 B = 1 placed in B
+				e - 5 sessions; 1 participant; cycle through p1-5 for each session = placed in the right one each time
 
-		*** maximize the number of people we place overall (without violating any of the above rules)
+		8 *** maximize the number of people we place overall (without violating any of the above rules)
 				... this may be best tested by doing the full run
 
 	*/
+
+	// First a few li'l helper functions for more concise test case functions
+		private struct function baseSetup() {
+			program = createProgram()
+			setControlValueToCreatedProgram(program)
+
+			return {
+				program: program,
+				start_date = '2024-06-01'
+			}
+		}
+		private struct function newUnits() {
+			stake = createStake()
+			return {
+				stake: stake,
+				ward = createWard(stake)
+			}
+		}
+		private numeric function newParticipant(string gender, struct base) {
+			person = createPerson(gender)
+			u = newUnits()
+			program_c = createProgramContext(program, person, u.ward, u.stake)
+			createPreRegReceivedEvent(program_c)
+			createSessionPreference(base.program, "my#program_c#", pm_location, base.start_date)
+			createFSURecords(pm_session, u.stake)
+
+			return {
+				person: person,
+				u: u,
+				program_c: program_c
+			}
+		}
+		private struct function newSession(struct base, numeric pm_location = 0, start_date = "") {
+			if (pm_location == 0)
+				pm_location = createPMLocation()
+
+			if (start_date == "")
+				start_date = base.start_date
+
+			sectionInfo = createFullSection(base.program)
+
+			return {
+				pm_location: pm_location,
+				sectionInfo: sectionInfo,
+				pm_session: createPMSession(pm_location, start_date, sectionInfo.section)
+			}
+		}
+
+		// 1 *** assign people in a random order (to make it fair)
+
+		//		... best tested with a few runthroughs and take the average
+		//		a - 1 session; 1 bed; 2 participants = ~50% of the time each is placed and the other not
+		private void function setup_1_a() {
+			b = baseSetup()
+
+			// FIXME: you are here - pass bed spaces in above to create the full section
+			//1 session; 1 bed
+			s = newSession(b)
+
+			// 2 participants
+			p1 = newParticipant('M', b)
+			p2 = newParticipant('M', b)
+		}
+
+		// 2 *** penalize link groups (to make it unfair)
+
+		//		... best tested with a few runthroughs and take the average
+		//		a - 1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 12 unlinked participants = 20 people placed
+		private void function setup_2_a() {
+
+		}
+
+		//		b - 1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 20 unlinked participants = group penalty applies, 20 people placed
+		private void function setup_2_b() {
+
+		}
+
+		//		c - 1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 100 unlinked participants = group penalty more apparent, 20 people placed
+		private void function setup_2_c() {
+
+		}
+
+		// 3 *** never sell more than max_enroll beds
+
+		//		a - 1 session; 1 bed; 2 participants = 1 placed; 1 not placed
+		private void function setup_3_a() {
+
+		}
+
+		// 4 *** honor unit reservations
+
+		//		a - 1 session; 1 beds; 1 participant; 1 other unit w/ 1 open reserved bed = 1 not placed
+		private void function setup_4_a() {
+
+		}
+
+		//		b - 1 session; 2 beds; 2 participants; 1 other unit w/ 1 open reserved bed = 1 placed; 1 not placed
+		private void function setup_4_b() {
+
+		}
+
+		//		c - 1 session; 2 beds; 1 participant; P's unit w/ 1 open reserved bed; 1 other unit w/ 1 open reserved bed = 1 placed
+		private void function setup_4_c() {
+
+		}
+
+		//		d - 1 session; 2 beds; 1* participant; P's unit w/ 1 filled reserved bed; 1 other unit w/ 1 open reserved bed = 1 not placed
+		private void function setup_4_d() {
+
+		}
+
+		//		e - 1 session; 3 beds; 1* participant; P's unit w/ 1 filled reserved bed; 1 other unit w/ 1 open reserved bed = 1 placed
+		private void function setup_4_e() {
+
+		}
+
+		// 5 *** everyone in a given link is placed, or no one in the link is placed
+
+		//		a - 1 session; 1 bed; 2 linked participants; 2 not placed
+		private void function setup_5_a() {
+
+		}
+
+		//		b - 1 session; 2 beds; 2 linked participants; 2 placed
+		private void function setup_5_b() {
+
+		}
+
+		//		c - 1 session; 1 M bed/ 1 F bed; 2 linked participants, M and F; 2 placed
+		private void function setup_5_c() {
+
+		}
+
+		//		d - 1 session; 2 M bed; 2 linked participants, M and F; 2 not placed
+		private void function setup_5_d() {
+
+		}
+
+		//		e - 2 sessions; 1 bed each; 2 linked participants; 2 not placed
+		private void function setup_5_e() {
+
+		}
+
+		// 6 *** if a link is placed, all the members are placed in the same pm_session (not split up over concurrent sessions)
+
+		//		a - 2 sessions; 1 full bed and 1 open bed each; 2 linked participants = 2 not placed
+		private void function setup_6_a() {
+
+		}
+
+		//		b - 2 sessions; 2 open beds each; 2 linked participants = 2 placed same session
+		private void function setup_6_b() {
+
+		}
+
+		// 7 *** we give people their highest priority preference possible (i.e., after randomizing assign as many 1st priorities as we can, then 2, then 3, etc.)
+
+		//		a - 1 session A, 1 session B; 1 open bed each session; 3 participants, each w/ p1 A, p2 B = 1 placed in A, 1 placed in B, 1 not placed
+		private void function setup_7_a() {
+
+		}
+
+		//		b - 1 session A, 1 session B; 2 open beds A, 1 open bed B; 2 participants X and Y, each w/ p1 A; 1 participant Z w/ p1 B, p2 A = X and Y placed in A, Z placed in B
+		private void function setup_7_b() {
+
+		}
+
+		//		c - 1 session A, 1 session B; 2 open beds A, 1 full bed B; 2 participants X and Y, each w/ p1 A; 1 participant Z w/ p1 B, p2 A = X and Y placed in A, Z not placed
+		private void function setup_7_c() {
+
+		}
+
+		//		d - 2 placetimes A and B; A is full; 1 participant w/ p1 A, p2 B = 1 placed in B
+		private void function setup_7_d() {
+
+		}
+
+		//		e - 5 sessions; 1 participant; cycle through p1-5 for each session = placed in the right one each time
+		private void function setup_7_e() {
+
+		}
+
 
 	// END actual test case setup functions
 
