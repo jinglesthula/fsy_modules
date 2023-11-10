@@ -1032,6 +1032,7 @@ component threadSafe {
 			)
 		);
 
+		// FIXME: code these here and put UI up for them
 		// What went wrong
 
 		return {
@@ -1687,13 +1688,16 @@ component threadSafe {
 				ward = createWard(stake)
 			}
 		}
-		private numeric function newParticipant(string gender, struct base) {
+		private struct function newParticipant(string gender, struct base, struct s, string start_date = "") {
+			if (start_date == "")
+				start_date = base.start_date
+
 			person = createPerson(gender)
 			u = newUnits()
 			program_c = createProgramContext(program, person, u.ward, u.stake)
 			createPreRegReceivedEvent(program_c)
-			createSessionPreference(base.program, "my#program_c#", pm_location, base.start_date)
-			createFSURecords(pm_session, u.stake)
+			createFSURecords(s.pm_session, u.stake)
+			createSessionPreference(base.program, "my#program_c#", s.pm_location, start_date)
 
 			return {
 				person: person,
@@ -1701,14 +1705,14 @@ component threadSafe {
 				program_c: program_c
 			}
 		}
-		private struct function newSession(struct base, numeric pm_location = 0, start_date = "") {
+		private struct function newSession(struct base, numeric female = 10, numeric male = 10, numeric pm_location = 0, start_date = "") {
 			if (pm_location == 0)
 				pm_location = createPMLocation()
 
 			if (start_date == "")
 				start_date = base.start_date
 
-			sectionInfo = createFullSection(base.program)
+			sectionInfo = createFullSection(base.program, female, male)
 
 			return {
 				pm_location: pm_location,
@@ -1724,13 +1728,12 @@ component threadSafe {
 		private void function setup_1_a() {
 			b = baseSetup()
 
-			// FIXME: you are here - pass bed spaces in above to create the full section
 			//1 session; 1 bed
-			s = newSession(b)
+			s = newSession(b, 0, 1)
 
 			// 2 participants
-			p1 = newParticipant('M', b)
-			p2 = newParticipant('M', b)
+			p1 = newParticipant('M', b, s)
+			p2 = newParticipant('M', b, s)
 		}
 
 		// 2 *** penalize link groups (to make it unfair)
