@@ -1061,7 +1061,7 @@ component threadSafe {
 	private numeric function createProgram() {
 		application.progress.append({ currentStep: "createProgram", tick: getTickCount() })
 
-		local.query = QueryExecute(
+		QueryExecute(
 			"
 			insert into product (
 				status,
@@ -1100,7 +1100,7 @@ component threadSafe {
 			{ datasource = variables.dsn.local, result = "local.result" }
 		);
 
-		writedump({ program: local.result, query: local.query })
+		writedump({ program: local.result })
 		writedump({ program: local.result.generatedkey })
 
 		return local.result.generatedkey;
