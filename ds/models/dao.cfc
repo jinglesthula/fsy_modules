@@ -1721,16 +1721,16 @@ component threadSafe {
 				ward = createWard(stake)
 			}
 		}
-		private struct function newParticipant(string gender, struct base, struct s, string start_date = "") {
+		private struct function newParticipant(string gender, struct base, struct s, string start_date = "", string prereg_link = "") {
 			if (start_date == "")
 				start_date = base.start_date
 
 			person = createPerson(gender)
 			u = newUnits()
-			program_c = createProgramContext(program, person, u.ward, u.stake)
+			program_c = createProgramContext(program, person, u.ward, u.stake, prereg_link)
 			createPreRegReceivedEvent(program_c)
 			createFSURecords(s.pm_session, u.stake)
-			createSessionPreference(base.program, "my#program_c#", s.pm_location, start_date)
+			createSessionPreference(base.program, prereg_link == "" ? "my#program_c#" : prereg_link, s.pm_location, start_date)
 
 			return {
 				person: person,
@@ -1774,7 +1774,24 @@ component threadSafe {
 		//		... best tested with a few runthroughs and take the average
 		//		a - 1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 12 unlinked participants = 20 people placed
 		private void function setup_2_a() {
+			b = baseSetup()
 
+			//1 session; 1 bed
+			s = newSession(b, 0, 20)
+
+			// 2 linked participants
+			newParticipant('M', b, s, "", "alpha")
+			newParticipant('M', b, s, "", "alpha")
+
+			// 6 linked participants
+			newParticipant('M', b, s, "", "bravo")
+			newParticipant('M', b, s, "", "bravo")
+			newParticipant('M', b, s, "", "bravo")
+			newParticipant('M', b, s, "", "bravo")
+			newParticipant('M', b, s, "", "bravo")
+			newParticipant('M', b, s, "", "bravo")
+
+			for (i = 1; i <= 12; i++) newParticipant('M', b, s)
 		}
 
 		//		b - 1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 20 unlinked participants = group penalty applies, 20 people placed
