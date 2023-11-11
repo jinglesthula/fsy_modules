@@ -1500,6 +1500,15 @@ component threadSafe {
 	) {
 		application.progress.append({ currentStep: "createSessionPreference", tick: getTickCount() })
 
+		local.joinCheck = queryExecute("
+			select * from session_preference where program = :program and prereg_link = :prereg_link and priority = :priority
+		", {
+			program: program,
+			prereg_link: prereg_link,
+			priority: priority
+		}, { datasource = variables.dsn.local });
+
+		if (local.joinCheck.recordCount == 0)
 		QueryExecute(
 			"
 			insert into session_preference (program, prereg_link, pm_location, start_date, priority, created_by)
