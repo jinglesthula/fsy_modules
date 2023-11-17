@@ -5,6 +5,7 @@ component threadSafe {
 	variables.dsn = { prod = "fsyweb_pro", dev = "fsyweb_dev", local = "fsyweb_local" };
 
 	variables.dsn.scheduler = variables.dsn.local
+	variables.dsn.prereg = variables.dsn.prod
 	variables.realProgram = 80000082
 
 	public query function countStarted() {
@@ -17,7 +18,7 @@ component threadSafe {
 				and context_type = 'Enrollment'
 		",
 			{},
-			{ datasource = variables.dsn.scheduler }
+			{ datasource = variables.dsn.prereg }
 		);
 	}
 
@@ -34,7 +35,7 @@ component threadSafe {
 				and prereg_link is not null
 		",
 			{},
-			{ datasource = variables.dsn.scheduler }
+			{ datasource = variables.dsn.prereg }
 		);
 	}
 
@@ -52,7 +53,7 @@ component threadSafe {
 				and prereg_link not like 'my[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
 		",
 			{},
-			{ datasource = variables.dsn.scheduler }
+			{ datasource = variables.dsn.prereg }
 		);
 	}
 
@@ -72,7 +73,7 @@ component threadSafe {
 			) data
 		",
 			{},
-			{ datasource = variables.dsn.scheduler }
+			{ datasource = variables.dsn.prereg }
 		);
 	}
 
@@ -84,7 +85,7 @@ component threadSafe {
 			select count(*) as completed from FSY.DBO.event where event_type = 'preRegReceived'
 		",
 			{},
-			{ datasource = variables.dsn.scheduler }
+			{ datasource = variables.dsn.prereg }
 		);
 	}
 
@@ -99,7 +100,7 @@ component threadSafe {
 				and context.status = 'Canceled'
 		",
 			{},
-			{ datasource = variables.dsn.scheduler }
+			{ datasource = variables.dsn.prereg }
 		);
 	}
 
@@ -115,7 +116,7 @@ component threadSafe {
 				and person = left(created_by, 8)
 		",
 			{},
-			{ datasource = variables.dsn.scheduler }
+			{ datasource = variables.dsn.prereg }
 		);
 	}
 
@@ -137,7 +138,7 @@ component threadSafe {
 			)
 		",
 			{},
-			{ datasource = variables.dsn.scheduler }
+			{ datasource = variables.dsn.prereg }
 		);
 	}
 
@@ -155,7 +156,7 @@ component threadSafe {
 				and context_type = 'Enrollment'
 		",
 			{},
-			{ datasource = variables.dsn.scheduler }
+			{ datasource = variables.dsn.prereg }
 		);
 	}
 
@@ -179,7 +180,7 @@ component threadSafe {
 			)
 		",
 			{},
-			{ datasource = variables.dsn.scheduler }
+			{ datasource = variables.dsn.prereg }
 		);
 	}
 
@@ -191,7 +192,7 @@ component threadSafe {
 			SELECT prereg_start, sysdatetime() as now from product where product_id = @program
 		",
 			{},
-			{ datasource = variables.dsn.scheduler }
+			{ datasource = variables.dsn.prereg }
 		)
 
 		local.start = local.range.prereg_start
@@ -219,7 +220,7 @@ component threadSafe {
 					and context.created < :end
 			",
 				{ start = { value = local.sliceStart, cfsqltype = "timestamp" }, end = { value = local.sliceEnd, cfsqltype = "timestamp" } },
-				{ datasource = variables.dsn.scheduler }
+				{ datasource = variables.dsn.prereg }
 			);
 
 			local.json.starts.append(local.slice.total)
@@ -235,7 +236,7 @@ component threadSafe {
 					and event.occurred < :end
 			",
 				{ start = { value = local.sliceStart, cfsqltype = "timestamp" }, end = { value = local.sliceEnd, cfsqltype = "timestamp" } },
-				{ datasource = variables.dsn.scheduler }
+				{ datasource = variables.dsn.prereg }
 			);
 
 			local.json.completions.append(local.slice.total)
@@ -260,7 +261,7 @@ component threadSafe {
 				)
 			",
 				{ start = { value = local.sliceStart, cfsqltype = "timestamp" }, end = { value = local.sliceEnd, cfsqltype = "timestamp" } },
-				{ datasource = variables.dsn.scheduler }
+				{ datasource = variables.dsn.prereg }
 			);
 
 			local.json.assistedStarts.append(local.slice.total)
@@ -279,7 +280,7 @@ component threadSafe {
 					and context.created < :end
 			",
 				{ start = { value = local.sliceStart, cfsqltype = "timestamp" }, end = { value = local.sliceEnd, cfsqltype = "timestamp" } },
-				{ datasource = variables.dsn.scheduler }
+				{ datasource = variables.dsn.prereg }
 			);
 
 			local.json.selfServeStarts.append(local.slice.total)
@@ -454,7 +455,6 @@ component threadSafe {
 				{ datasource = variables.dsn.scheduler }
 			)
 		);
-
 
 		local.assignedByChoice = variables.utils.queryToStruct(
 			QueryExecute(
@@ -724,7 +724,6 @@ component threadSafe {
 			)
 		);
 
-
 		local.linksPlacedCounts = variables.utils.queryToStruct(
 			QueryExecute(
 				"
@@ -771,7 +770,6 @@ component threadSafe {
 				{ datasource = variables.dsn.scheduler }
 			)
 		);
-
 
 		local.assignedByGenderCounts = variables.utils.queryToStruct(
 			QueryExecute(
@@ -1032,6 +1030,24 @@ component threadSafe {
 			)
 		);
 
+		local.unassignedParticipants = variables.utils.queryToStruct(
+			QueryExecute(
+				"
+			declare @program numeric(8) = (select value from cntl_value where control = 'current_fsy_program')
+
+			-- how many people who pre-registered didn't get assigned
+			select context.context_id  from context inner join event on event_object = 'context' and event_object_id = context_id and event_type = 'preRegReceived'
+			inner join session_preference sp on sp.prereg_link = context.prereg_link and sp.priority = 1
+			left join (
+					context section inner join product product_s on product_s.product_id = section.product and product_s.program = @program and product_s.master_type = 'Section'
+			) on section.person = context.person and section.context_type = 'Enrollment' and section.status <> 'Canceled'
+			where context.context_type = 'Enrollment' and context.status <> 'Canceled' and context.product = @program and section.context_id is null
+			",
+				{},
+				{ datasource = variables.dsn.scheduler }
+			)
+		);
+
 		// FIXME: code these here and put UI up for them
 		// What went wrong
 
@@ -1052,7 +1068,8 @@ component threadSafe {
 			"assignedByGenderCounts" = local.assignedByGenderCounts,
 			"assignedByLinkType" = local.assignedByLinkType,
 			"assignedByReservationType" = local.assignedByReservationType,
-			"linkMemberStats" = local.linkMemberStats
+			"linkMemberStats" = local.linkMemberStats,
+			"unassignedParticipants" = local.unassignedParticipants
 		}
 	}
 
@@ -1779,8 +1796,8 @@ component threadSafe {
 		}
 
 		// 2 *** penalize link groups (to make it unfair)
+		//		... best tested with a few runthroughs and take the average (at least for b and c; a should always fit all 20)
 
-		//		... best tested with a few runthroughs and take the average
 		//		a - 1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 12 unlinked participants = 20 people placed
 		private void function setup_2_a() {
 			b = baseSetup()
@@ -1805,12 +1822,46 @@ component threadSafe {
 
 		//		b - 1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 20 unlinked participants = group penalty applies, 20 people placed
 		private void function setup_2_b() {
+			b = baseSetup()
 
+			//1 session; 1 bed
+			s = newSession(b, 0, 20)
+
+			// 2 linked participants
+			newParticipant('M', b, s, "", "alpha")
+			newParticipant('M', b, s, "", "alpha")
+
+			// 6 linked participants
+			newParticipant('M', b, s, "", "bravo")
+			newParticipant('M', b, s, "", "bravo")
+			newParticipant('M', b, s, "", "bravo")
+			newParticipant('M', b, s, "", "bravo")
+			newParticipant('M', b, s, "", "bravo")
+			newParticipant('M', b, s, "", "bravo")
+
+			for (i = 1; i <= 20; i++) newParticipant('M', b, s)
 		}
 
 		//		c - 1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 100 unlinked participants = group penalty more apparent, 20 people placed
 		private void function setup_2_c() {
+			b = baseSetup()
 
+			//1 session; 1 bed
+			s = newSession(b, 0, 20)
+
+			// 2 linked participants
+			newParticipant('M', b, s, "", "alpha")
+			newParticipant('M', b, s, "", "alpha")
+
+			// 6 linked participants
+			newParticipant('M', b, s, "", "bravo")
+			newParticipant('M', b, s, "", "bravo")
+			newParticipant('M', b, s, "", "bravo")
+			newParticipant('M', b, s, "", "bravo")
+			newParticipant('M', b, s, "", "bravo")
+			newParticipant('M', b, s, "", "bravo")
+
+			for (i = 1; i <= 100; i++) newParticipant('M', b, s)
 		}
 
 		// 3 *** never sell more than max_enroll beds
@@ -1929,37 +1980,24 @@ component threadSafe {
 	private void function teardown() {
 		application.progress.append({ currentStep: "teardown", tick: getTickCount() })
 
-		QueryExecute(
-			"
-			delete fsy_session_unit where created_by = 'FSY-1333'
-		",
-			{},
-			{ datasource = variables.dsn.local }
-		);
-		QueryExecute(
-			"
-			delete pm_session where created_by = 'FSY-1333'
-		",
-			{},
-			{ datasource = variables.dsn.local }
-		);
-		QueryExecute(
-			"
-			delete session_preference where created_by = 'FSY-1333'
-			delete pm_location where created_by = 'FSY-1333'
-			delete event where event_object = 'CONTEXT' and event_object_id in (select context_id from context where person in (select person_id from person where first_name = 'First_1333' and last_name = 'Last_1333'))
-			delete context where person in (select person_id from person where first_name = 'First_1333' and last_name = 'Last_1333')
-			delete fsy_unit where created_by = 'FSY-1333'
-			delete person where first_name = 'First_1333' and last_name = 'Last_1333'
-			delete option_item where section in (select product_id from product where short_title like 'Section_%_1333')
-			delete option_group where section in (select product_id from product where short_title like 'Section_%_1333')
-			delete product where short_title like '%Housing_%_1333'
-			delete product where short_title like 'Section_%_1333'
-			delete product where short_title = '2024FSY_1333'
-		",
-			{},
-			{ datasource = variables.dsn.local }
-		);
+		QueryExecute("
+			EXEC sp_set_session_context 'noTrigger', 1;
+			delete terms_acceptance where program = (select product_id from product where short_title = '2024FSY_1333')
+			EXEC sp_set_session_context 'noTrigger', 0;
+		", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete fsy_session_unit where created_by = 'FSY-1333'", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete pm_session where created_by = 'FSY-1333'", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete session_preference where created_by = 'FSY-1333'", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete pm_location where created_by = 'FSY-1333'", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete event where event_object = 'CONTEXT' and event_object_id in (select context_id from context where person in (select person_id from person where first_name = 'First_1333' and last_name = 'Last_1333'))", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete context where person in (select person_id from person where first_name = 'First_1333' and last_name = 'Last_1333')", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete fsy_unit where created_by = 'FSY-1333'", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete person where first_name = 'First_1333' and last_name = 'Last_1333'", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete option_item where section in (select product_id from product where short_title like 'Section_%_1333')", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete option_group where section in (select product_id from product where short_title like 'Section_%_1333')", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete product where short_title like '%Housing_%_1333'", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete product where short_title like 'Section_%_1333'", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete product where short_title = '2024FSY_1333'", {}, { datasource = variables.dsn.local } );
 	}
 
 	public void function undoPreregAssignments(required numeric program) {
