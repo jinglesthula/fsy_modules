@@ -1618,6 +1618,40 @@ component threadSafe {
 		return local.result.generatedkey
 	}
 
+	private struct function createEnrollment(numeric person_id, numeric section, numeric housing) {
+		application.progress.append({ currentStep: "createEnrollment", tick: getTickCount() })
+
+		QueryExecute(
+			"
+			insert into context (person, product, context_type, status, pending_status, created_by)
+			values (:person, :product, 'Enrollment', 'Reserved', 'Active', 'FSY-1333')
+		",
+			{
+				person = person_id,
+				product = section
+			},
+			{ datasource = variables.dsn.local, result = "local.section" }
+		)
+
+		QueryExecute(
+			"
+			insert into context (person, product, context_type, status, pending_status, choice_for, created_by)
+			values (:person, :product, 'Enrollment', 'Reserved', 'Active', :section, 'FSY-1333')
+		",
+			{
+				person = person_id,
+				product = housing,
+				section = local.section.generatedkey
+			},
+			{ datasource = variables.dsn.local, result = "local.housing" }
+		)
+
+		return {
+			section = local.section.generatedkey,
+			housing = local.housing.generatedkey
+		}
+	}
+
 	private void function createFSURecords(
 		required numeric pm_session,
 		required numeric fsy_unit,
@@ -1747,15 +1781,17 @@ component threadSafe {
 				ward = createWard(stake)
 			}
 		}
-		private struct function newParticipant(string gender, struct base, struct s, string start_date = "", string prereg_link = "") {
+		private struct function newParticipant(string gender, struct base, struct s, string start_date = "", string prereg_link = "", female = 0, male = 0, struct u = {}) {
 			if (start_date == "")
 				start_date = base.start_date
 
+			if (u.isEmpty())
+				u = newUnits()
+
 			person = createPerson(gender)
-			u = newUnits()
 			program_c = createProgramContext(program, person, u.ward, u.stake, prereg_link)
 			createPreRegReceivedEvent(program_c)
-			createFSURecords(s.pm_session, u.stake)
+			createFSURecords(s.pm_session, u.stake, female, male)
 			createSessionPreference(base.program, prereg_link == "" ? "my#program_c#" : prereg_link, s.pm_location, start_date)
 
 			return {
@@ -1802,7 +1838,7 @@ component threadSafe {
 		private void function setup_2_a() {
 			b = baseSetup()
 
-			//1 session; 1 bed
+			//1 session; 20 beds
 			s = newSession(b, 0, 20)
 
 			// 2 linked participants
@@ -1821,10 +1857,14 @@ component threadSafe {
 		}
 
 		//		b - 1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 20 unlinked participants = group penalty applies, 20 people placed
+		// results:
+		// 18 2 2 6 x6
+		// 12 8 8 0 x1
+		// 20 0 0 8 x1
 		private void function setup_2_b() {
 			b = baseSetup()
 
-			//1 session; 1 bed
+			//1 session; 20 beds
 			s = newSession(b, 0, 20)
 
 			// 2 linked participants
@@ -1843,10 +1883,12 @@ component threadSafe {
 		}
 
 		//		c - 1 session; 20 beds; 2 linked participants A, 6 linked partitipants B, 100 unlinked participants = group penalty more apparent, 20 people placed
+		// results:
+		// 20 0 80 8 x2
 		private void function setup_2_c() {
 			b = baseSetup()
 
-			//1 session; 1 bed
+			//1 session; 20 beds
 			s = newSession(b, 0, 20)
 
 			// 2 linked participants
@@ -1868,56 +1910,146 @@ component threadSafe {
 
 		//		a - 1 session; 1 bed; 2 participants = 1 placed; 1 not placed
 		private void function setup_3_a() {
+			b = baseSetup()
 
+			// 1 session; 1 bed
+			s = newSession(b, 0, 1)
+
+			// 2 participants
+			newParticipant('M', b, s)
+			newParticipant('M', b, s)
 		}
 
 		// 4 *** honor unit reservations
 
-		//		a - 1 session; 1 beds; 1 participant; 1 other unit w/ 1 open reserved bed = 1 not placed
+		//		a - 1 session; 1 bed; 1 participant; 1 other unit w/ 1 open reserved bed = 1 not placed
 		private void function setup_4_a() {
+			b = baseSetup()
 
+			// 1 session; 1 bed
+			s = newSession(b, 0, 1)
+
+			// 1 participant
+			newParticipant('M', b, s)
+
+			// 1 other unit w/ 1 open reserved bed
+			createFSURecords(s.pm_session, createStake(), 0, 1)
 		}
 
 		//		b - 1 session; 2 beds; 2 participants; 1 other unit w/ 1 open reserved bed = 1 placed; 1 not placed
 		private void function setup_4_b() {
+			b = baseSetup()
 
+			// 1 session; 2 beds
+			s = newSession(b, 0, 2)
+
+			// 2 participants
+			newParticipant('M', b, s)
+			newParticipant('M', b, s)
+
+			// 1 other unit w/ 1 open reserved bed
+			createFSURecords(s.pm_session, createStake(), 0, 1)
 		}
 
 		//		c - 1 session; 2 beds; 1 participant; P's unit w/ 1 open reserved bed; 1 other unit w/ 1 open reserved bed = 1 placed
 		private void function setup_4_c() {
+			b = baseSetup()
 
+			// 1 session; 2 beds
+			s = newSession(b, 0, 2)
+
+			// 1 participant; unit has 1 open reserved bed
+			newParticipant('M', b, s, "", "", 0, 1)
+
+			// 1 other unit w/ 1 open reserved bed
+			createFSURecords(s.pm_session, createStake(), 0, 1)
 		}
 
-		//		d - 1 session; 2 beds; 1* participant; P's unit w/ 1 filled reserved bed; 1 other unit w/ 1 open reserved bed = 1 not placed
+		//		d - 1 session; 2 beds; 1* participant; P's unit w/ 1 filled reserved bed; 1 other unit w/ 1 open reserved bed = 1 not placed (and yes, 1 already "placed")
 		private void function setup_4_d() {
+			b = baseSetup()
 
+			// 1 session; 2 beds
+			s = newSession(b, 0, 2)
+
+			// 1 participant; unit has 1 open reserved bed
+			p = newParticipant('M', b, s, "", "", 0, 1)
+
+			// 1 filled reserved bed
+			p2 = newParticipant(gender = 'M', base = b, s = s, u = p.u)
+			createEnrollment(p2.person, s.sectionInfo.section, s.sectionInfo.male)
+
+			// 1 other unit w/ 1 open reserved bed
+			createFSURecords(s.pm_session, createStake(), 0, 1)
 		}
 
 		//		e - 1 session; 3 beds; 1* participant; P's unit w/ 1 filled reserved bed; 1 other unit w/ 1 open reserved bed = 1 placed
 		private void function setup_4_e() {
+			b = baseSetup()
 
+			// 1 session; 1 bed
+			s = newSession(b, 0, 3)
+
+			// 1 participant; unit has 1 open reserved bed
+			p = newParticipant('M', b, s, "", "", 0, 1)
+
+			// 1 filled reserved bed
+			p2 = newParticipant(gender = 'M', base = b, s = s, u = p.u)
+			createEnrollment(p2.person, s.sectionInfo.section, s.sectionInfo.male)
+
+			// 1 other unit w/ 1 open reserved bed
+			createFSURecords(s.pm_session, createStake(), 0, 1)
 		}
 
 		// 5 *** everyone in a given link is placed, or no one in the link is placed
 
 		//		a - 1 session; 1 bed; 2 linked participants; 2 not placed
 		private void function setup_5_a() {
+			b = baseSetup()
+
+			// 1 session; 1 bed
+			s = newSession(b, 0, 1)
+
+			// 2 linked participants
+			newParticipant('M', b, s, "", "apple")
+			newParticipant('M', b, s, "", "apple")
 
 		}
 
 		//		b - 1 session; 2 beds; 2 linked participants; 2 placed
 		private void function setup_5_b() {
+			b = baseSetup()
 
+			// 1 session; 2 beds
+			s = newSession(b, 0, 2)
+
+			// 2 linked participants
+			newParticipant('M', b, s, "", "apple")
+			newParticipant('M', b, s, "", "apple")
 		}
 
 		//		c - 1 session; 1 M bed/ 1 F bed; 2 linked participants, M and F; 2 placed
 		private void function setup_5_c() {
+			b = baseSetup()
 
+			// 1 session; 1 M bed/ 1 F bed
+			s = newSession(b, 1, 1)
+
+			// 2 linked participants
+			newParticipant('M', b, s, "", "apple")
+			newParticipant('F', b, s, "", "apple")
 		}
 
 		//		d - 1 session; 2 M bed; 2 linked participants, M and F; 2 not placed
 		private void function setup_5_d() {
+			b = baseSetup()
 
+			// 1 session; 1 M bed/ 1 F bed
+			s = newSession(b, 0, 2)
+
+			// 2 linked participants
+			newParticipant('M', b, s, "", "apple")
+			newParticipant('F', b, s, "", "apple")
 		}
 
 		//		e - 2 sessions; 1 bed each; 2 linked participants; 2 not placed
