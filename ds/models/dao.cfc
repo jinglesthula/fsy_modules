@@ -1167,8 +1167,8 @@ component threadSafe {
 
 		if (local.result.recordCount == 0) local.next = 1;
 		else {
-			local.match = ReFind("Section_(\d+)_1333", local.result.title)
-			local.next = Mid(local.result.title, local.match.pos[ 1 ], local.match.len[ 1 ])
+			local.match = reFind("Section_(\d+)_1333", local.result.title, 1, true)
+			local.next = Mid(local.result.title, local.match.pos[ 2 ], local.match.len[ 2 ]) + 1
 		}
 
 		// section
@@ -2054,7 +2054,15 @@ component threadSafe {
 
 		//		e - 2 sessions; 1 bed each; 2 linked participants; 2 not placed
 		private void function setup_5_e() {
+			b = baseSetup()
 
+			// 1 session; 1 M bed/ 1 F bed
+			s = newSession(b, 0, 1)
+			s2 = newSession(b, 0, 1)
+
+			// 2 linked participants
+			newParticipant('M', b, s, "", "apple")
+			newParticipant('M', b, s, "", "apple")
 		}
 
 		// 6 *** if a link is placed, all the members are placed in the same pm_session (not split up over concurrent sessions)
