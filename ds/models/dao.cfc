@@ -1675,7 +1675,7 @@ component threadSafe {
 
 	// Begin actual test case setup functions
 
-	// just put all the above functions through their paces
+	// just put all the above functions through their paces; ignore this
 	private void function kitchenSink() {
 		program = createProgram()
 		setControlValueToCreatedProgram(program)
@@ -1691,26 +1691,6 @@ component threadSafe {
 		prereg_link = "my#program_c#" // for example, but could use a non-my passed in earlier
 		createSessionPreference(program, prereg_link, pm_location, start_date)
 		pm_session = createPMSession(pm_location, start_date)
-		writedump({ pm_session: pm_session })
-		createFSURecords(pm_session, stake)
-	}
-
-	private void function happyPath() {
-		program = createProgram()
-		setControlValueToCreatedProgram(program)
-		sectionInfo = createFullSection(program)
-		writedump(sectionInfo)
-		stake = createStake()
-		ward = createWard(stake)
-		writedump({ ward: ward, stake: stake })
-		person = createPerson('M')
-		program_c = createProgramContext(program, person, ward, stake)
-		createPreRegReceivedEvent(program_c)
-		pm_location = createPMLocation()
-		start_date = '2024-06-01'
-		prereg_link = "my#program_c#" // for example, but could use a non-my passed in earlier
-		createSessionPreference(program, prereg_link, pm_location, start_date)
-		pm_session = createPMSession(pm_location, start_date, sectionInfo.section)
 		writedump({ pm_session: pm_session })
 		createFSURecords(pm_session, stake)
 	}
@@ -1827,6 +1807,28 @@ component threadSafe {
 				sectionInfo: sectionInfo,
 				pm_session: createPMSession(pm_location, start_date, sectionInfo.section)
 			}
+		}
+
+		// 0 *** ignore this, similar to the kitchenSink function above
+
+		private void function happyPath() {
+			program = createProgram()
+			setControlValueToCreatedProgram(program)
+			sectionInfo = createFullSection(program)
+			writedump(sectionInfo)
+			stake = createStake()
+			ward = createWard(stake)
+			writedump({ ward: ward, stake: stake })
+			person = createPerson('M')
+			program_c = createProgramContext(program, person, ward, stake)
+			createPreRegReceivedEvent(program_c)
+			pm_location = createPMLocation()
+			start_date = '2024-06-01'
+			prereg_link = "my#program_c#" // for example, but could use a non-my passed in earlier
+			createSessionPreference(program, prereg_link, pm_location, start_date)
+			pm_session = createPMSession(pm_location, start_date, sectionInfo.section)
+			writedump({ pm_session: pm_session })
+			createFSURecords(pm_session, stake)
 		}
 
 		// 1 *** assign people in a random order (to make it fair)
@@ -2194,6 +2196,14 @@ component threadSafe {
 
 		//		e - 5 sessions; 1 participant; cycle through p1-5 for each session = placed in the right one each time
 		// rerun this one 5x, uncommenting each of the last 5 lines in this function in turn
+		// test they got into the right section with a query like:
+		/*
+			-- what got created
+			select * from FSY.DBO.product where short_title like 'Section_%_1333'
+			-- make sure it was for the 2nd section, not the first
+			select person, product, context_type, context.status, pending_status, choice_for, context.created, context.created_by
+			from FSY.DBO.context inner join product on product = product_id where product.master_type = 'Section' and short_title like 'Section_%_1333' order by context.created desc
+		*/
 		private void function setup_7_e() {
 			b = baseSetup()
 
@@ -2211,11 +2221,11 @@ component threadSafe {
 			s_z = newSession(b, 0, 0)
 
 			// participants
-			newParticipant('M', b, [s_a, s_w, s_x, s_y, s_z])
-			//newParticipant('M', b, [s_w, s_a, s_x, s_y, s_z])
-			//newParticipant('M', b, [s_w, s_x, s_a, s_y, s_z])
-			//newParticipant('M', b, [s_w, s_x, s_y, s_a, s_z])
-			//newParticipant('M', b, [s_w, s_x, s_y, s_z, s_a])
+			//newParticipant('M', b, [s_a, s_w, s_x, s_y, s_z])
+			//newParticipant('M', b, [s_w, s_b, s_x, s_y, s_z])
+			//newParticipant('M', b, [s_w, s_x, s_c, s_y, s_z])
+			//newParticipant('M', b, [s_w, s_x, s_y, s_d, s_z])
+			newParticipant('M', b, [s_w, s_x, s_y, s_z, s_e])
 		}
 
 
