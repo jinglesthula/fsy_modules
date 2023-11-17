@@ -1781,18 +1781,31 @@ component threadSafe {
 				ward = createWard(stake)
 			}
 		}
-		private struct function newParticipant(string gender, struct base, struct s, string start_date = "", string prereg_link = "", female = 0, male = 0, struct u = {}) {
-			if (start_date == "")
-				start_date = base.start_date
-
+		private struct function newParticipant(string gender, struct base, any s, any start_date = "", string prereg_link = "", female = 0, male = 0, struct u = {}) {
 			if (u.isEmpty())
 				u = newUnits()
+
+			if (!isArray(s))
+				s = [s]
+
+			if (isSimpleValue(start_date) && start_date == "")
+				start_date = [base.start_date]
+
+			if (!isArray(start_date))
+				start_date = [start_date]
+
+			if (start_date.len() < s.len())
+				for (local.i = start_date.len(); i <= s.len(); local.i++)
+					start_date.append(b.start_date) // just pad with the base
+
 
 			person = createPerson(gender)
 			program_c = createProgramContext(program, person, u.ward, u.stake, prereg_link)
 			createPreRegReceivedEvent(program_c)
-			createFSURecords(s.pm_session, u.stake, female, male)
-			createSessionPreference(base.program, prereg_link == "" ? "my#program_c#" : prereg_link, s.pm_location, start_date)
+			for (local.i = 1; local.i <= s.len(); local.i++) {
+				createFSURecords(s[local.i].pm_session, u.stake, female, male)
+				createSessionPreference(base.program, prereg_link == "" ? "my#program_c#" : prereg_link, s[local.i].pm_location, start_date[local.i], local.i)
+			}
 
 			return {
 				person: person,
@@ -2058,7 +2071,7 @@ component threadSafe {
 
 			// 1 session; 1 M bed/ 1 F bed
 			s = newSession(b, 0, 1)
-			s2 = newSession(b, 0, 1)
+			s2 = newSession(b, 0, 1, s.pm_location)
 
 			// 2 linked participants
 			newParticipant('M', b, s, "", "apple")
@@ -2067,41 +2080,142 @@ component threadSafe {
 
 		// 6 *** if a link is placed, all the members are placed in the same pm_session (not split up over concurrent sessions)
 
-		//		a - 2 sessions; 1 full bed and 1 open bed each; 2 linked participants = 2 not placed
+		//		a - 2 sessions; 1 full bed and 1 open bed each; 2 linked participants = 2 not placed (yes, with 2 "already" placed)
 		private void function setup_6_a() {
+			b = baseSetup()
 
+			// 1 session; 1 M bed/ 1 F bed
+			s = newSession(b, 0, 2)
+			s2 = newSession(b, 0, 2, s.pm_location)
+
+			// 2 linked participants
+			newParticipant('M', b, s, "", "apple")
+			newParticipant('M', b, s, "", "apple")
+
+			// 2 full beds, 1 in each session
+			p = newParticipant('M', b, s)
+			p2 = newParticipant('M', b, s2)
+			createEnrollment(p.person, s.sectionInfo.section, s.sectionInfo.male)
+			createEnrollment(p2.person, s2.sectionInfo.section, s2.sectionInfo.male)
 		}
 
-		//		b - 2 sessions; 2 open beds each; 2 linked participants = 2 placed same session
+		//		b - 2 sessions; 2 open beds each; 2 linked participants = 2 placed same session (need to inspect the db directly after running the scheduler, as with this query)
+		// select context_id, product from context where created_by = 'FSY-1333' and choice_for is null
 		private void function setup_6_b() {
+			b = baseSetup()
 
+			// sessions
+			s = newSession(b, 0, 2)
+			s2 = newSession(b, 0, 2, s.pm_location)
+
+			// participants
+			newParticipant('M', b, s, "", "apple")
+			newParticipant('M', b, s, "", "apple")
 		}
 
 		// 7 *** we give people their highest priority preference possible (i.e., after randomizing assign as many 1st priorities as we can, then 2, then 3, etc.)
 
 		//		a - 1 session A, 1 session B; 1 open bed each session; 3 participants, each w/ p1 A, p2 B = 1 placed in A, 1 placed in B, 1 not placed
+		// test with query like:
+		/*
+			select person, product, context_type, context.status, pending_status, choice_for, context.created, context.created_by
+			from FSY.DBO.context inner join product on product = product_id where short_title like 'Section_%_1333' order by context.created desc
+		*/
 		private void function setup_7_a() {
+			b = baseSetup()
 
+			// sessions
+			s_a = newSession(b, 0, 1)
+			s_b = newSession(b, 0, 1)
+
+			// participants
+			newParticipant('M', b, [s_a, s_b])
+			newParticipant('M', b, [s_a, s_b])
+			newParticipant('M', b, [s_a, s_b])
 		}
 
 		//		b - 1 session A, 1 session B; 2 open beds A, 1 open bed B; 2 participants X and Y, each w/ p1 A; 1 participant Z w/ p1 B, p2 A = X and Y placed in A, Z placed in B
+		// test with query like:
+		/*
+			select person, product, context_type, context.status, pending_status, choice_for, context.created, context.created_by
+			from FSY.DBO.context inner join product on product = product_id where short_title like 'Section_%_1333' order by context.created desc
+		*/
 		private void function setup_7_b() {
+			b = baseSetup()
 
+			// sessions
+			s_a = newSession(b, 0, 2)
+			s_b = newSession(b, 0, 1)
+
+			// participants
+			x = newParticipant('M', b, s_a)
+			y = newParticipant('M', b, s_a)
+			z = newParticipant('M', b, [s_b, s_a])
 		}
 
-		//		c - 1 session A, 1 session B; 2 open beds A, 1 full bed B; 2 participants X and Y, each w/ p1 A; 1 participant Z w/ p1 B, p2 A = X and Y placed in A, Z not placed
+		//		c - 1 session A, 1 session B; 2 open beds A, 1 full bed B; 2 participants X and Y, each w/ p1 A; 1 participant Z w/ p1 B, p2 A = X and Y placed in A, Z not placed (and 1 "already" placed)
 		private void function setup_7_c() {
+			b = baseSetup()
 
+			// sessions
+			s_a = newSession(b, 0, 2)
+			s_b = newSession(b, 0, 1)
+
+			// participants
+			x = newParticipant('M', b, s_a)
+			y = newParticipant('M', b, s_a)
+			z = newParticipant('M', b, [s_b, s_a])
+
+			// already placed
+			a = newParticipant('M', b, s_b)
+			createEnrollment(a.person, s_b.sectionInfo.section, s_b.sectionInfo.male)
 		}
 
 		//		d - 2 placetimes A and B; A is full; 1 participant w/ p1 A, p2 B = 1 placed in B
+		// verify with query like:
+		/*
+			-- what got created
+			select * from FSY.DBO.product where short_title like 'Section_%_1333'
+			-- make sure it was for the 2nd section, not the first
+			select person, product, context_type, context.status, pending_status, choice_for, context.created, context.created_by
+			from FSY.DBO.context inner join product on product = product_id where product.master_type = 'Section' and short_title like 'Section_%_1333' order by context.created desc
+		*/
 		private void function setup_7_d() {
+			b = baseSetup()
+			other_start = '2024-06-08'
 
+			// sessions
+			s_a = newSession(b, 0, 0) // 0, 0 to simulate already full
+			s_b = newSession(b, 0, 1, s_a.pm_location, other_start)
+
+			// participants
+			p = newParticipant('M', b, [s_a, s_b], [b.start_date, other_start])
 		}
 
 		//		e - 5 sessions; 1 participant; cycle through p1-5 for each session = placed in the right one each time
+		// rerun this one 5x, uncommenting each of the last 5 lines in this function in turn
 		private void function setup_7_e() {
+			b = baseSetup()
 
+			// sessions
+			s_a = newSession(b, 0, 1)
+			s_b = newSession(b, 0, 1)
+			s_c = newSession(b, 0, 1)
+			s_d = newSession(b, 0, 1)
+			s_e = newSession(b, 0, 1)
+
+			// the "other" sessions, none of which will take the person
+			s_w = newSession(b, 0, 0)
+			s_x = newSession(b, 0, 0)
+			s_y = newSession(b, 0, 0)
+			s_z = newSession(b, 0, 0)
+
+			// participants
+			newParticipant('M', b, [s_a, s_w, s_x, s_y, s_z])
+			//newParticipant('M', b, [s_w, s_a, s_x, s_y, s_z])
+			//newParticipant('M', b, [s_w, s_x, s_a, s_y, s_z])
+			//newParticipant('M', b, [s_w, s_x, s_y, s_a, s_z])
+			//newParticipant('M', b, [s_w, s_x, s_y, s_z, s_a])
 		}
 
 
