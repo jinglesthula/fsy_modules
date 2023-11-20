@@ -1835,6 +1835,13 @@ component threadSafe {
 
 		//		... best tested with a few runthroughs and take the average
 		//		a - 1 session; 1 bed; 2 participants = ~50% of the time each is placed and the other not
+		// verify with a query like:
+		/*
+			select * from FSY.DBO.person where created_by like 'FSY-1333%'
+
+			select person, product, context_type, context.status, pending_status, choice_for, context.created, context.created_by
+			from FSY.DBO.context inner join product on product = product_id where product.master_type = 'Section' and short_title like 'Section_%_1333' order by context.created desc
+		*/
 		private void function setup_1_a() {
 			b = baseSetup()
 
@@ -2254,7 +2261,7 @@ component threadSafe {
 		QueryExecute("delete session_preference where created_by = 'FSY-1333'", {}, { datasource = variables.dsn.local } );
 		QueryExecute("delete pm_location where created_by = 'FSY-1333'", {}, { datasource = variables.dsn.local } );
 		QueryExecute("delete event where event_object = 'CONTEXT' and event_object_id in (select context_id from context where person in (select person_id from person where first_name = 'First_1333' and last_name = 'Last_1333'))", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete context where person in (select person_id from person where first_name = 'First_1333' and last_name = 'Last_1333')", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete context where product in (select product_id from product where short_title like '%_1333')", {}, { datasource = variables.dsn.local } );
 		QueryExecute("delete fsy_unit where created_by = 'FSY-1333'", {}, { datasource = variables.dsn.local } );
 		QueryExecute("delete person where first_name = 'First_1333' and last_name = 'Last_1333'", {}, { datasource = variables.dsn.local } );
 		QueryExecute("delete option_item where section in (select product_id from product where short_title like 'Section_%_1333')", {}, { datasource = variables.dsn.local } );
