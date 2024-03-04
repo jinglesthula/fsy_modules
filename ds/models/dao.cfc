@@ -1,12 +1,13 @@
-component threadSafe {
-
-	property name="utils" inject;
+component threadSafe extends="o3.internal.cfc.model" {
+	property name="injector" inject="wirebox";
 
 	variables.dsn = { prod = "fsyweb_pro", dev = "fsyweb_dev", local = "fsyweb_local" };
 
 	variables.dsn.scheduler = variables.dsn.local
 	variables.dsn.prereg = variables.dsn.prod
 	variables.realProgram = 80000082
+	variables.ticket = "FSY-1511"
+	variables.ticketName = reReplace(variables.ticket, "-", "_", "all")
 
 	public query function countStarted() {
 		return QueryExecute(
@@ -1100,8 +1101,8 @@ component threadSafe {
 		)
 		select
 			status,
-			concat(short_title, '_1333'),
-			concat(title, '_1333'),
+			concat(short_title, '_#variables.ticketName#'),
+			concat(title, '_#variables.ticketName#'),
 			department,
 			product_type,
 			master_type,
@@ -1127,6 +1128,11 @@ component threadSafe {
 		return local.result.generatedkey;
 	}
 
+	// just get the current cntl_value program
+	private numeric function getProgram() {
+		return getModel("controlValue").getItem("CURRENT_FSY_PROGRAM")
+	}
+
 	public void function setControlValueToCreatedProgram(
 		numeric product_id
 	) {
@@ -1135,9 +1141,9 @@ component threadSafe {
 
 		QueryExecute(
 			"
-			update cntl_value set value = :product_id, updated_by = 'FSY-1333' where control = 'current_fsy_program'
+			update cntl_value set value = :product_id, updated_by = :created_by where control = 'current_fsy_program'
 		",
-			{ product_id = arguments.product_id },
+			{ product_id = arguments.product_id, created_by: variables.ticket },
 			{ datasource = variables.dsn.local }
 		);
 	}
@@ -1158,7 +1164,7 @@ component threadSafe {
 			select top 1 title
 			from product
 			where master_type = 'Section'
-				and short_title like '%_1333'
+				and short_title like '%_#variables.ticketName#'
 			order by created desc
 		",
 			{},
@@ -1167,7 +1173,7 @@ component threadSafe {
 
 		if (local.result.recordCount == 0) local.next = 1;
 		else {
-			local.match = reFind("Section_(\d+)_1333", local.result.title, 1, true)
+			local.match = reFind("Section_(\d+)_#variables.ticketName#", local.result.title, 1, true)
 			local.next = Mid(local.result.title, local.match.pos[ 2 ], local.match.len[ 2 ]) + 1
 		}
 
@@ -1193,8 +1199,8 @@ component threadSafe {
 			)
 			select
 				'Active',
-				concat('Section_', :next, '_1333'),
-				concat('Section_', :next, '_1333'),
+				concat('Section_', :next, '_#variables.ticketName#'),
+				concat('Section_', :next, '_#variables.ticketName#'),
 				department,
 				product_type,
 				'Section',
@@ -1248,8 +1254,8 @@ component threadSafe {
 			)
 			select
 				'Active',
-				concat('FemaleHousing_', :next, '_1333'),
-				concat('FemaleHousing_', :next, '_1333'),
+				concat('FemaleHousing_', :next, '_#variables.ticketName#'),
+				concat('FemaleHousing_', :next, '_#variables.ticketName#'),
 				department,
 				product_type,
 				'Option',
@@ -1309,8 +1315,8 @@ component threadSafe {
 			)
 			select
 				'Active',
-				concat('MaleHousing_', :next, '_1333'),
-				concat('MaleHousing_', :next, '_1333'),
+				concat('MaleHousing_', :next, '_#variables.ticketName#'),
+				concat('MaleHousing_', :next, '_#variables.ticketName#'),
 				department,
 				product_type,
 				'Option',
@@ -1434,9 +1440,9 @@ component threadSafe {
 		QueryExecute(
 			"
 			insert into person (first_name, last_name, gender, birthdate, lds_account_id, created_by)
-			values ('First_1333', 'Last_1333', :gender, '2008-01-01', :church_id, 'FSY-1333')
+			values ('First_#variables.ticketName#', 'Last_#variables.ticketName#', :gender, '2008-01-01', :church_id, :created_by)
 		",
-			{ gender = arguments.gender, church_id = "#Floor(Rand() * 100000000)##Floor(Rand() * 100000000)#" },
+			{ gender = arguments.gender, church_id = "#Floor(Rand() * 100000000)##Floor(Rand() * 100000000)#", created_by: variables.ticket },
 			{ datasource = variables.dsn.local, result = "local.result" }
 		);
 
@@ -1455,14 +1461,15 @@ component threadSafe {
 		QueryExecute(
 			"
 			insert into context (person, product, context_type, status, prereg_link, lds_unit_no, stake, created_by)
-			values (:person, :product, 'Enrollment', 'Active', :prereg_link, :ward, :stake, 'FSY-1333')
+			values (:person, :product, 'Enrollment', 'Active', :prereg_link, :ward, :stake, :created_by)
 		",
 			{
 				person = arguments.person,
 				product = arguments.program,
 				prereg_link = arguments.prereg_link,
 				ward = arguments.ward,
-				stake = arguments.stake
+				stake = arguments.stake,
+				created_by = variables.ticket
 			},
 			{ datasource = variables.dsn.local, result = "local.result" }
 		);
@@ -1470,13 +1477,101 @@ component threadSafe {
 		if (arguments.prereg_link == "")
 			QueryExecute(
 				"
-				update context set prereg_link = :prereg_link, updated_by = 'FSY-1333' where context_id = :context_id
+				update context set prereg_link = :prereg_link, updated_by = :created_by where context_id = :context_id
 			",
-				{ prereg_link = "my#local.result.generatedkey#", context_id = local.result.generatedkey },
+				{ prereg_link = "my#local.result.generatedkey#", context_id = local.result.generatedkey,
+				created_by = variables.ticket },
 				{ datasource = variables.dsn.local }
 			);
 
 		return local.result.generatedkey
+	}
+
+	private numeric function createHireContext(
+		required numeric person,
+		required numeric program
+	) {
+		application.progress.append({ currentStep: "createHireContext", tick: getTickCount() })
+
+		QueryExecute(
+			"
+			insert into context (person, product, context_type, status, created_by)
+			values (:person, :product, 'Hired Staff', 'Active', :created_by)
+		",
+			{
+				person = arguments.person,
+				product = arguments.program,
+				created_by = variables.ticket
+			},
+			{ datasource = variables.dsn.local, result = "local.result" }
+		);
+
+		return local.result.generatedkey
+	}
+
+	private struct function createHiringInfo(
+		required numeric context,
+		string hired_position = "Counselor",
+		string state = "UT",
+		string country = "USA"
+	) {
+		application.progress.append({ currentStep: "createHiringInfo", tick: getTickCount() })
+
+		QueryExecute(
+			"
+			insert into hiring_info (context, application_type, hired_position, interview_score, state, country, created_by)
+			values (:context, 'FSY', :hired_position, 9, :state, :country, :created_by)
+		",
+			{
+				context = arguments.context,
+				hired_position = arguments.hired_position,
+				state = arguments.state,
+				country = arguments.country,
+				created_by = variables.ticket
+			},
+			{ datasource = variables.dsn.local, result = "local.result" }
+		);
+
+		return local.result
+	}
+
+	private void function createAvailability(
+		required numeric context,
+		required array weeksAvailable,
+		numeric number_of_weeks = 1
+	) {
+		application.progress.append({ currentStep: "createAvailability", tick: getTickCount() })
+
+		QueryExecute(
+			"
+			insert into hires_availability (context, number_of_weeks, created_by)
+			values (:context, :number_of_weeks, :created_by)
+		",
+			{
+				context: arguments.context,
+				number_of_weeks: arguments.number_of_weeks,
+				created_by = variables.ticket
+			},
+			{ datasource = variables.dsn.local, result = "local.result" }
+		);
+
+		local.ha_id = local.result.generatedkey
+
+		for (local.week in arguments.weeksAvailable) {
+			QueryExecute(
+				"
+				insert into availability_week (hires_availability, start_date, type, created_by)
+				values (:id, :start_date, 'Session', :created_by)
+			",
+				{
+					id: local.ha_id,
+					start_date: local.week,
+				created_by = variables.ticket
+				},
+				{ datasource = variables.dsn.local, result = "local.result" }
+			);
+		}
+
 	}
 
 	private void function createPreRegReceivedEvent(
@@ -1499,9 +1594,11 @@ component threadSafe {
 		// TODO: see if country is necessary - hopefully that'll just be on the product ¯\_(ツ)_/¯
 		QueryExecute(
 			"
-			insert into pm_location (name, created_by) values ('This is the place', 'FSY-1333')
+			insert into pm_location (name, created_by) values ('This is the place', :created_by)
 		",
-			{},
+			{
+				created_by = variables.ticket
+			},
 			{ datasource = variables.dsn.local, result = "local.result" }
 		);
 
@@ -1525,13 +1622,15 @@ component threadSafe {
 			priority: priority
 		}, { datasource = variables.dsn.local });
 
+		local.args = Duplicate(arguments)
+		local.args.created_by = variables.ticket
 		if (local.joinCheck.recordCount == 0)
 		QueryExecute(
 			"
 			insert into session_preference (program, prereg_link, pm_location, start_date, priority, created_by)
-			values (:program, :prereg_link, :pm_location, :start_date, :priority, 'FSY-1333')
+			values (:program, :prereg_link, :pm_location, :start_date, :priority, :created_by)
 		",
-			Duplicate(arguments),
+			local.args,
 			{ datasource = variables.dsn.local }
 		);
 	}
@@ -1555,9 +1654,10 @@ component threadSafe {
 		QueryExecute(
 			"
 			insert into fsy_unit (unit_number, name, [type], parent, created_by)
-			values (:unit_number, :name, 'Ward', :parent, 'FSY-1333')
+			values (:unit_number, :name, 'Ward', :parent, :created_by)
 		",
-			{ unit_number = local.next.unit_number, parent = arguments.stake, name = "ward_#local.next.unit_number#_FSY-1333" },
+			{ unit_number = local.next.unit_number, parent = arguments.stake, name = "ward_#local.next.unit_number#_variables.ticket",
+				created_by = variables.ticket },
 			{ datasource = variables.dsn.local, result = "local.result" }
 		);
 
@@ -1582,9 +1682,10 @@ component threadSafe {
 			// Utah American Fork Area Coordinating Council
 			"
 			insert into fsy_unit (unit_number, name, [type], parent, created_by)
-			values (:unit_number, :name, 'Stake', 466344, 'FSY-1333')
+			values (:unit_number, :name, 'Stake', 466344, :created_by)
 		",
-			{ unit_number = local.next.unit_number, name = "stake_#local.next.unit_number#_FSY-1333" },
+			{ unit_number = local.next.unit_number, name = "stake_#local.next.unit_number#_#variables.ticket#",
+				created_by = variables.ticket },
 			{ datasource = variables.dsn.local, result = "local.result" }
 		);
 
@@ -1601,7 +1702,7 @@ component threadSafe {
 		QueryExecute(
 			"
 			insert into pm_session (title, department, session_type, product, pm_location, start_date, end_date, participant_start_date, participant_end_date, created_by)
-			values (:title, 'FSY', 'FSY', :product, :pm_location, :start_date, :end_date, :participant_start_date, :participant_end_date, 'FSY-1333')
+			values (:title, 'FSY', 'FSY', :product, :pm_location, :start_date, :end_date, :participant_start_date, :participant_end_date, :created_by)
 		",
 			{
 				title = "session_#arguments.pm_location#_#arguments.start_date#",
@@ -1610,7 +1711,8 @@ component threadSafe {
 				start_date = dateFormat(dateAdd("d", -1, arguments.start_date), "yyyy-mm-dd"),
 				end_date = dateFormat(dateAdd("d", 6, arguments.start_date), "yyyy-mm-dd"),
 				participant_start_date = arguments.start_date,
-				participant_end_date = dateFormat(dateAdd("d", 5, arguments.start_date), "yyyy-mm-dd")
+				participant_end_date = dateFormat(dateAdd("d", 5, arguments.start_date), "yyyy-mm-dd"),
+				created_by = variables.ticket
 			},
 			{ datasource = variables.dsn.local, result = "local.result" }
 		);
@@ -1624,11 +1726,12 @@ component threadSafe {
 		QueryExecute(
 			"
 			insert into context (person, product, context_type, status, pending_status, created_by)
-			values (:person, :product, 'Enrollment', 'Reserved', 'Active', 'FSY-1333')
+			values (:person, :product, 'Enrollment', 'Reserved', 'Active', :created_by)
 		",
 			{
 				person = person_id,
-				product = section
+				product = section,
+				created_by = variables.ticket
 			},
 			{ datasource = variables.dsn.local, result = "local.section" }
 		)
@@ -1636,12 +1739,13 @@ component threadSafe {
 		QueryExecute(
 			"
 			insert into context (person, product, context_type, status, pending_status, choice_for, created_by)
-			values (:person, :product, 'Enrollment', 'Reserved', 'Active', :section, 'FSY-1333')
+			values (:person, :product, 'Enrollment', 'Reserved', 'Active', :section, :created_by)
 		",
 			{
 				person = person_id,
 				product = housing,
-				section = local.section.generatedkey
+				section = local.section.generatedkey,
+				created_by = variables.ticket
 			},
 			{ datasource = variables.dsn.local, result = "local.housing" }
 		)
@@ -1662,12 +1766,14 @@ component threadSafe {
 
 		queryExecute("
 			insert into fsy_session_unit (pm_session, fsy_unit, female, male, source, created_by)
-			values (:pm_session, :fsy_unit, :female, :male, 'Participant', 'FSY-1333')
-		", {
+			values (:pm_session, :fsy_unit, :female, :male, 'Participant', :created_by)
+		",
+		{
 			pm_session = arguments.pm_session,
 			fsy_unit = arguments.fsy_unit,
 			female = { value=arguments.female, cfsqltype="cf_sql_numeric", null=(arguments.female == 0) },
-			male = { value=arguments.male, cfsqltype="cf_sql_numeric", null=(arguments.male == 0) }
+			male = { value=arguments.male, cfsqltype="cf_sql_numeric", null=(arguments.male == 0) },
+			created_by = variables.ticket
 		}, { datasource = variables.dsn.local });
 	}
 
@@ -1837,10 +1943,10 @@ component threadSafe {
 		//		a - 1 session; 1 bed; 2 participants = ~50% of the time each is placed and the other not
 		// verify with a query like:
 		/*
-			select * from FSY.DBO.person where created_by like 'FSY-1333%'
+			select * from FSY.DBO.person where created_by like 'FSY-#variables.ticketName#%'
 
 			select person, product, context_type, context.status, pending_status, choice_for, context.created, context.created_by
-			from FSY.DBO.context inner join product on product = product_id where product.master_type = 'Section' and short_title like 'Section_%_1333' order by context.created desc
+			from FSY.DBO.context inner join product on product = product_id where product.master_type = 'Section' and short_title like 'Section_%_#variables.ticketName#' order by context.created desc
 		*/
 		private void function setup_1_a() {
 			b = baseSetup()
@@ -2109,7 +2215,7 @@ component threadSafe {
 		}
 
 		//		b - 2 sessions; 2 open beds each; 2 linked participants = 2 placed same session (need to inspect the db directly after running the scheduler, as with this query)
-		// select context_id, product from context where created_by = 'FSY-1333' and choice_for is null
+		// select context_id, product from context where created_by = variables.ticket and choice_for is null
 		private void function setup_6_b() {
 			b = baseSetup()
 
@@ -2128,7 +2234,7 @@ component threadSafe {
 		// test with query like:
 		/*
 			select person, product, context_type, context.status, pending_status, choice_for, context.created, context.created_by
-			from FSY.DBO.context inner join product on product = product_id where short_title like 'Section_%_1333' order by context.created desc
+			from FSY.DBO.context inner join product on product = product_id where short_title like 'Section_%_#variables.ticketName#' order by context.created desc
 		*/
 		private void function setup_7_a() {
 			b = baseSetup()
@@ -2147,7 +2253,7 @@ component threadSafe {
 		// test with query like:
 		/*
 			select person, product, context_type, context.status, pending_status, choice_for, context.created, context.created_by
-			from FSY.DBO.context inner join product on product = product_id where short_title like 'Section_%_1333' order by context.created desc
+			from FSY.DBO.context inner join product on product = product_id where short_title like 'Section_%_#variables.ticketName#' order by context.created desc
 		*/
 		private void function setup_7_b() {
 			b = baseSetup()
@@ -2184,10 +2290,10 @@ component threadSafe {
 		// verify with query like:
 		/*
 			-- what got created
-			select * from FSY.DBO.product where short_title like 'Section_%_1333'
+			select * from FSY.DBO.product where short_title like 'Section_%_#variables.ticketName#'
 			-- make sure it was for the 2nd section, not the first
 			select person, product, context_type, context.status, pending_status, choice_for, context.created, context.created_by
-			from FSY.DBO.context inner join product on product = product_id where product.master_type = 'Section' and short_title like 'Section_%_1333' order by context.created desc
+			from FSY.DBO.context inner join product on product = product_id where product.master_type = 'Section' and short_title like 'Section_%_#variables.ticketName#' order by context.created desc
 		*/
 		private void function setup_7_d() {
 			b = baseSetup()
@@ -2206,10 +2312,10 @@ component threadSafe {
 		// test they got into the right section with a query like:
 		/*
 			-- what got created
-			select * from FSY.DBO.product where short_title like 'Section_%_1333'
+			select * from FSY.DBO.product where short_title like 'Section_%_#variables.ticketName#'
 			-- make sure it was for the 2nd section, not the first
 			select person, product, context_type, context.status, pending_status, choice_for, context.created, context.created_by
-			from FSY.DBO.context inner join product on product = product_id where product.master_type = 'Section' and short_title like 'Section_%_1333' order by context.created desc
+			from FSY.DBO.context inner join product on product = product_id where product.master_type = 'Section' and short_title like 'Section_%_#variables.ticketName#' order by context.created desc
 		*/
 		private void function setup_7_e() {
 			b = baseSetup()
@@ -2253,22 +2359,22 @@ component threadSafe {
 
 		QueryExecute("
 			EXEC sp_set_session_context 'noTrigger', 1;
-			delete terms_acceptance where program = (select product_id from product where short_title = '2024FSY_1333')
+			delete terms_acceptance where program = (select product_id from product where short_title = '2024FSY_#variables.ticketName#')
 			EXEC sp_set_session_context 'noTrigger', 0;
 		", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete fsy_session_unit where created_by = 'FSY-1333'", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete pm_session where created_by = 'FSY-1333'", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete session_preference where created_by = 'FSY-1333'", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete pm_location where created_by = 'FSY-1333'", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete event where event_object = 'CONTEXT' and event_object_id in (select context_id from context where person in (select person_id from person where first_name = 'First_1333' and last_name = 'Last_1333'))", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete context where product in (select product_id from product where short_title like '%_1333')", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete fsy_unit where created_by = 'FSY-1333'", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete person where first_name = 'First_1333' and last_name = 'Last_1333'", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete option_item where section in (select product_id from product where short_title like 'Section_%_1333')", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete option_group where section in (select product_id from product where short_title like 'Section_%_1333')", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete product where short_title like '%Housing_%_1333'", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete product where short_title like 'Section_%_1333'", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete product where short_title = '2024FSY_1333'", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete fsy_session_unit where created_by = :created_by", { created_by: variables.ticket }, { datasource = variables.dsn.local } );
+		QueryExecute("delete pm_session where created_by = :created_by", { created_by: variables.ticket }, { datasource = variables.dsn.local } );
+		QueryExecute("delete session_preference where created_by = :created_by", { created_by: variables.ticket }, { datasource = variables.dsn.local } );
+		QueryExecute("delete pm_location where created_by = :created_by", { created_by: variables.ticket }, { datasource = variables.dsn.local } );
+		QueryExecute("delete event where event_object = 'CONTEXT' and event_object_id in (select context_id from context where person in (select person_id from person where first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#'))", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete context where product in (select product_id from product where short_title like '%_#variables.ticketName#')", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete fsy_unit where created_by = :created_by", { created_by: variables.ticket }, { datasource = variables.dsn.local } );
+		QueryExecute("delete person where first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#'", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete option_item where section in (select product_id from product where short_title like 'Section_%_#variables.ticketName#')", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete option_group where section in (select product_id from product where short_title like 'Section_%_#variables.ticketName#')", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete product where short_title like '%Housing_%_#variables.ticketName#'", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete product where short_title like 'Section_%_#variables.ticketName#'", {}, { datasource = variables.dsn.local } );
+		QueryExecute("delete product where short_title = '2024FSY_#variables.ticketName#'", {}, { datasource = variables.dsn.local } );
 	}
 
 	public void function undoPreregAssignments(required numeric program) {
@@ -2297,5 +2403,163 @@ component threadSafe {
 			programProductID = local.program,
 			program = variables.utils.queryToStruct(queryExecute("select * from product where product_id = :product_id", { product_id: local.program }, { datasource = variables.dsn.local }))
 		}
+	}
+
+	//////////////////////////////////////////////////////////
+	// This is the part where we test hiring scheduler
+	//////////////////////////////////////////////////////////
+
+	public any function onMissingMethod(string missingMethodName, struct missingMethodArguments) {
+		try {
+			local.hiringTest = true // metadata blah blah == "hiringTest"
+			if (local.hiringTest)
+				application.progress = []
+
+			invoke("", missingMethodName, missingMethodArguments)
+			return { pass: true }
+		}
+		catch (any e) {
+			if (local.hiringTest)
+				return { pass: false, message: e.message, type: e.type, error: e}
+
+			rethrow;
+		}
+	}
+
+	// Utils
+	public void function removeAllCandidates() {
+		queryExecute("
+			DELETE emergency_info WHERE context IN (
+				SELECT context_id
+				FROM context
+					INNER JOIN product on product = product_id
+				WHERE context_type IN ('Counselor', 'Hired Staff')
+					AND #variables.realProgram# IN (product.program, product.product_id)
+					AND context.status = 'Active'
+			)
+		", {}, { datasource: variables.dsn.local });
+
+		queryExecute("
+			DELETE context_property WHERE context IN (
+				SELECT context_id
+				FROM context
+					INNER JOIN product on product = product_id
+				WHERE context_type IN ('Counselor', 'Hired Staff')
+					AND #variables.realProgram# IN (product.program, product.product_id)
+					AND context.status = 'Active'
+			)
+		", {}, { datasource: variables.dsn.local });
+
+		queryExecute("
+			DELETE availability_week WHERE hires_availability IN (SELECT hires_availability_id FROM hires_availability WHERE context IN (
+				SELECT context_id
+				FROM context
+					INNER JOIN product on product = product_id
+				WHERE context_type IN ('Counselor', 'Hired Staff')
+					AND #variables.realProgram# IN (product.program, product.product_id)
+					AND context.status = 'Active'
+			))
+		", {}, { datasource: variables.dsn.local });
+
+		queryExecute("
+			DELETE hires_availability WHERE context IN (
+				SELECT context_id
+				FROM context
+					INNER JOIN product on product = product_id
+				WHERE context_type IN ('Counselor', 'Hired Staff')
+					AND #variables.realProgram# IN (product.program, product.product_id)
+					AND context.status = 'Active'
+			)
+		", {}, { datasource: variables.dsn.local });
+
+		queryExecute("
+			DELETE hiring_info WHERE context IN (
+				SELECT context_id
+				FROM context
+					INNER JOIN product on product = product_id
+				WHERE context_type IN ('Counselor', 'Hired Staff')
+					AND #variables.realProgram# IN (product.program, product.product_id)
+					AND context.status = 'Active'
+			)
+		", {}, { datasource: variables.dsn.local });
+
+		queryExecute("
+			DELETE context WHERE context_id IN (
+				SELECT context_id
+				FROM context
+					INNER JOIN product on product = product_id
+				WHERE context_type IN ('Counselor', 'Hired Staff')
+					AND #variables.realProgram# IN (product.program, product.product_id)
+					AND context.status = 'Active'
+			)
+		", {}, { datasource: variables.dsn.local });
+	}
+
+	public void function assertCandidatesAssigned(required numeric total) {
+		var assigned = queryExecute("
+			SELECT COUNT(context_id) AS total
+			FROM context
+				INNER JOIN product on product = product_id
+			WHERE context_type IN ('Counselor')
+				AND product.program = #variables.realProgram#
+				AND context.status = 'Active'
+		", {}, { datasource: variables.dsn.local });
+
+		if (assigned.total != arguments.total)
+			throw(type="assertCandidatesAssigned", message="Expected: #arguments.total# Actual: #assigned.total#");
+	}
+
+	public any function runScheduler() {
+		local.users = getModel("fsyDAO").getAvailableHires(getModel("fsyDAO").getFSYYear().year);
+		local.scheduler = getModel("employmentSchedulerS");
+		return local.scheduler.processUserData(local.users);
+	}
+
+	// Tests
+	private void function testDryRun() hiringTest {
+		// no one to assign
+		removeAllCandidates()
+
+		runScheduler()
+
+		// outcome - no assignments made
+		assertCandidatesAssigned(0)
+	}
+
+	variables.dates = {
+		week0: '2024-05-22',
+		provo01A: '2024-05-26'
+	}
+
+	private void function testHappyPath() hiringTest {
+		// no one to assign
+		removeAllCandidates()
+
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.provo01A])
+
+		runScheduler()
+
+		// outcome - no assignments made
+		assertCandidatesAssigned(1)
+	}
+
+		private void function testAlreadyAssignedOneLinkedSession() hiringTest {
+		// no one to assign
+		removeAllCandidates()
+
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.provo01A])
+
+		runScheduler()
+
+		// outcome - no assignments made
+		assertCandidatesAssigned(1)
 	}
 }
