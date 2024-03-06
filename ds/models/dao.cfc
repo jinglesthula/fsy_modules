@@ -2521,7 +2521,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.scheduler = getModel("employmentSchedulerS");
 
 		local.shouldLog = StructKeyExists(application, "log") && application.log.keyExists("hiringScheduler") && application.log.hiringScheduler;
-		if (local.shouldLog)
+		if (local.shouldLog && fileExists("#ExpandPath("/o3/scratch")#/hiringSchedulerLog.json"))
 			fileDelete("#ExpandPath("/o3/scratch")#/hiringSchedulerLog.json");
 
 		return local.scheduler.processUserData(local.users);
