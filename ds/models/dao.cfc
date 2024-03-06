@@ -2436,6 +2436,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				WHERE context_type IN ('Counselor', 'Hired Staff')
 					AND #variables.realProgram# IN (product.program, product.product_id)
 					AND context.status = 'Active'
+					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 			)
 		", {}, { datasource: variables.dsn.local });
 
@@ -2447,6 +2448,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				WHERE context_type IN ('Counselor', 'Hired Staff')
 					AND #variables.realProgram# IN (product.program, product.product_id)
 					AND context.status = 'Active'
+					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 			)
 		", {}, { datasource: variables.dsn.local });
 
@@ -2458,6 +2460,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				WHERE context_type IN ('Counselor', 'Hired Staff')
 					AND #variables.realProgram# IN (product.program, product.product_id)
 					AND context.status = 'Active'
+					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 			))
 		", {}, { datasource: variables.dsn.local });
 
@@ -2469,6 +2472,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				WHERE context_type IN ('Counselor', 'Hired Staff')
 					AND #variables.realProgram# IN (product.program, product.product_id)
 					AND context.status = 'Active'
+					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 			)
 		", {}, { datasource: variables.dsn.local });
 
@@ -2480,6 +2484,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				WHERE context_type IN ('Counselor', 'Hired Staff')
 					AND #variables.realProgram# IN (product.program, product.product_id)
 					AND context.status = 'Active'
+					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 			)
 		", {}, { datasource: variables.dsn.local });
 
@@ -2491,6 +2496,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				WHERE context_type IN ('Counselor', 'Hired Staff')
 					AND #variables.realProgram# IN (product.program, product.product_id)
 					AND context.status = 'Active'
+					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 			)
 		", {}, { datasource: variables.dsn.local });
 	}
@@ -2503,6 +2509,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			WHERE context_type IN ('Counselor')
 				AND product.program = #variables.realProgram#
 				AND context.status = 'Active'
+				AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 		", {}, { datasource: variables.dsn.local });
 
 		if (assigned.total != arguments.total)
@@ -2569,7 +2576,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 	}
 
 	private void function testHappyPath() hiringTest {
-		removeAllCandidates()
+		hiringSetup()
 
 		// one person to assign
 		local.program = getProgram()
