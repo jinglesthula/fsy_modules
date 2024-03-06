@@ -1519,8 +1519,8 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		QueryExecute(
 			"
-			insert into hiring_info (context, application_type, hired_position, interview_score, state, country, created_by)
-			values (:context, 'FSY', :hired_position, 9, :state, :country, :created_by)
+			insert into hiring_info (context, application_type, hired_position, interview_score, state, country, auto_schedule, created_by)
+			values (:context, 'FSY', :hired_position, 9, :state, :country, 'Y', :created_by)
 		",
 			{
 				context = arguments.context,
@@ -2420,7 +2420,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		}
 		catch (any e) {
 			if (local.hiringTest)
-				return { pass: false, message: e.message, type: e.type, error: e}
+				return { pass: false, message: e.message, type: e.type, error: e, progress: application.progress }
 
 			rethrow;
 		}
@@ -2512,7 +2512,44 @@ component threadSafe extends="o3.internal.cfc.model" {
 	public any function runScheduler() {
 		local.users = getModel("fsyDAO").getAvailableHires(getModel("fsyDAO").getFSYYear().year);
 		local.scheduler = getModel("employmentSchedulerS");
+
+		local.shouldLog = StructKeyExists(application, "log") && application.log.keyExists("hiringScheduler") && application.log.hiringScheduler;
+		if (local.shouldLog)
+			fileDelete("#ExpandPath("/o3/scratch")#/hiringSchedulerLog.json");
+
 		return local.scheduler.processUserData(local.users);
+	}
+
+	public void function createAssignment(
+		required numeric person_id,
+		required numeric pm_session_id,
+		string context_type,
+		string created_by = "FSY-1511"
+	) {
+		queryExecute("
+			insert into context (person, product, context_type, status, created_by)
+			values (:person_id, (select product from pm_session where pm_session_id = :pm_session_id), :context_type, 'Active', :created_by)
+		", arguments, { datasource: variables.dsn.local })
+	}
+
+	public void function linkSessions(
+		required numeric base_session,
+		required numeric linked_session,
+		string created_by = "FSY-1511"
+	) {
+		queryExecute("
+			insert into fsy_session_link (base_session, linked_session, created_by)
+			values (:base_session, :linked_session, :created_by)
+		", arguments, { datasource: variables.dsn.local })
+	}
+
+	private void function unlinkAllSessions() {
+		queryExecute("delete fsy_session_link", {}, { datasource: variables.dsn.local })
+	}
+
+	private void function hiringSetup() {
+		removeAllCandidates()
+		unlinkAllSessions()
 	}
 
 	// Tests
@@ -2521,45 +2558,45 @@ component threadSafe extends="o3.internal.cfc.model" {
 		removeAllCandidates()
 
 		runScheduler()
-
-		// outcome - no assignments made
 		assertCandidatesAssigned(0)
 	}
 
 	variables.dates = {
-		week0: '2024-05-22',
-		provo01A: '2024-05-26'
+		week0: '2024-05-22', // week 21 starts 5/19
+		week1: '2024-05-26',
+		week2: '2024-06-02',
+		week3: '2024-06-09'
 	}
 
 	private void function testHappyPath() hiringTest {
-		// no one to assign
 		removeAllCandidates()
 
+		// one person to assign
 		local.program = getProgram()
 		local.person_id = createPerson("M")
 		local.hireContext = createHireContext(local.person_id, local.program)
 		createHiringInfo(local.hireContext, "Counselor", "UT")
-		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.provo01A])
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1])
 
 		runScheduler()
-
-		// outcome - no assignments made
 		assertCandidatesAssigned(1)
 	}
 
-		private void function testAlreadyAssignedOneLinkedSession() hiringTest {
-		// no one to assign
-		removeAllCandidates()
+	private void function testAlreadyAssignedOneLinkedSession() hiringTest {
+		hiringSetup()
 
 		local.program = getProgram()
+		application.progress.append({ program: local.program })
 		local.person_id = createPerson("M")
+		application.progress.append({ person_id: local.person_id })
 		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext: local.hireContext })
 		createHiringInfo(local.hireContext, "Counselor", "UT")
-		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.provo01A])
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3], 3)
+		createAssignment(local.person_id, 10001317, "Counselor")
+		linkSessions(10001317, 10001343)
 
 		runScheduler()
-
-		// outcome - no assignments made
-		assertCandidatesAssigned(1)
+		assertCandidatesAssigned(3)
 	}
 }
