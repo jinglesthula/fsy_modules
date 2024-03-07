@@ -6,6 +6,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 	variables.dsn.scheduler = variables.dsn.local
 	variables.dsn.prereg = variables.dsn.prod
 	variables.realProgram = 80000082
+	variables.trainingProgram = 80041146
 	variables.ticket = "FSY-1511"
 	variables.ticketName = reReplace(variables.ticket, "-", "_", "all")
 
@@ -1574,6 +1575,28 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 	}
 
+	private void function createTrainingTravel(
+		required numeric context,
+		string state = "UT",
+		string country = "USA"
+	) {
+		application.progress.append({ currentStep: "createTrainingTravel", tick: getTickCount() })
+
+		QueryExecute(
+			"
+			insert into training_travel (context, country, state, created_by)
+			values (:context, :country, :state, :created_by)
+		",
+			{
+				context: arguments.context,
+				state: arguments.state,
+				country: arguments.country,
+				created_by = variables.ticket
+			},
+			{ datasource = variables.dsn.local }
+		);
+	}
+
 	private void function createPreRegReceivedEvent(
 		required numeric context_id
 	) {
@@ -2460,7 +2483,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		week1: '2024-05-26',
 		week2: '2024-06-02',
 		week3: '2024-06-09',
-		week28: '2024-07-07',
+		week28: '2024-07-07', // ugh - switching from FSY weeks to week of the year? who writes this garbage?
 		week29: '2024-07-14',
 		week30: '2024-07-21'
 	}
@@ -2528,12 +2551,24 @@ component threadSafe extends="o3.internal.cfc.model" {
 		", {}, { datasource: variables.dsn.local });
 
 		queryExecute("
-			DELETE context WHERE context_id IN (
+			DELETE training_travel WHERE context IN (
 				SELECT context_id
 				FROM context
 					INNER JOIN product on product = product_id
 				WHERE context_type IN ('Counselor', 'Hired Staff')
 					AND #variables.realProgram# IN (product.program, product.product_id)
+					AND context.status = 'Active'
+					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
+			)
+		", {}, { datasource: variables.dsn.local });
+
+		queryExecute("
+			DELETE context WHERE context_id IN (
+				SELECT context_id
+				FROM context
+					INNER JOIN product on product = product_id
+				WHERE context_type IN ('Counselor', 'Hired Staff', 'Enrollment')
+					AND (#variables.realProgram# IN (product.program, product.product_id) OR #variables.trainingProgram# IN (product.program, product.product_id))
 					AND context.status = 'Active'
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 			)
@@ -2553,6 +2588,24 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		if (assigned.total != arguments.total)
 			throw(type="assertCandidatesAssigned", message="Expected: #arguments.total# Actual: #assigned.total#");
+	}
+
+	public void function assertCandidatesAssignedTraining(required numeric week, required numeric order) {
+		var assigned = queryExecute("
+			SELECT COUNT(context_id) AS total
+			FROM context
+				INNER JOIN product on product = product_id
+				INNER JOIN pm_session ON pm_session.product = product.product_id AND pm_session.session_type IN ('FSY Training', 'FSY Core Training')
+			WHERE context_type IN ('Enrollment')
+				AND product.program = #variables.trainingProgram#
+				AND context.status = 'Active'
+				AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
+				AND DATEPART(WEEK, product.start_date) = :week
+				AND pm_session.training_order_in_week = :order
+		", arguments, { datasource: variables.dsn.local });
+
+		if (assigned.total != 1)
+			throw(type="assertCandidatesAssignedTraining", message="Expected: week #arguments.week#, order #arguments.order#");
 	}
 
 	public any function runScheduler() {
@@ -2596,6 +2649,10 @@ component threadSafe extends="o3.internal.cfc.model" {
 	private void function hiringSetup() {
 		removeAllCandidates()
 		unlinkAllSessions()
+		setSessionStaffNeeds(numToSetTo = 10, type = "cn")
+		setSessionStaffNeeds(numToSetTo = 10, type = "ac")
+		setSessionStaffNeeds(numToSetTo = 10, type = "hc")
+		setSessionStaffNeeds(numToSetTo = 10, type = "cd")
 	}
 
 	private void function setSessionStaffNeeds(
@@ -2629,7 +2686,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				#arguments.type == "cn" ? "cn_female = :numToSetTo," : ""#
 				#arguments.type == "ac" ? "ac_female = :numToSetTo," : ""#
 				#arguments.type == "hc" ? "hc_female = :numToSetTo," : ""#
-				#arguments.type == "cd" ? "cd_female = :numToSetTo" : ""#
+				#arguments.type == "cd" ? "cd_female = :numToSetTo," : ""#
 				updated_by = :updated_by where pm_session_id in (:sessions)
 			",
 			{ numToSetTo = arguments.numToSetTo, updated_by = variables.ticket, sessions = { value = local.sessions, list = true }, type: arguments.type },
@@ -2695,7 +2752,16 @@ component threadSafe extends="o3.internal.cfc.model" {
 	}
 
 	private void function testCanadaSameProvince() hiringTest {
-		// - Alberta -> Alberta
+		// This test covers 2 cases because the first (Test 2) passing implies the other (Test 1) passing as well
+
+		// Test 2
+		// - Alberta followed by Alberta
+		// - only sessions available are 2 back-to-back Alberta sessions
+		// - outcome
+		// 	- person is assigned both sessions
+
+		// Test 1
+		// - residence: Alberta -> assignment: Alberta
 		// - residency is Alberta
 		// - only session available is Alberta
 		// - outcome
@@ -2715,6 +2781,53 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		runScheduler()
 		assertCandidatesAssigned(2)
+	}
+
+	private void function testTrainingTravelNull() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week2], 1)
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+		assertCandidatesAssignedTraining(22, 1)
+	}
+
+	private void function testTrainingTravelUtah() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week2], 1)
+		createTrainingTravel(local.hireContext);
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+		assertCandidatesAssignedTraining(22, 1)
+	}
+
+	private void function testTrainingTravelFarFarAway() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week2], 1)
+		createTrainingTravel(local.hireContext, "CA");
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+		assertCandidatesAssignedTraining(22, 2)
 	}
 
 	private void function testAlreadyAssignedOneAvailOneLinked() hiringTest {
