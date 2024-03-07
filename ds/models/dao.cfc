@@ -2479,13 +2479,16 @@ component threadSafe extends="o3.internal.cfc.model" {
 	}
 
 	variables.dates = {
-		week0: '2024-05-22', // week 21 starts 5/19
+		week0: '2024-05-22', // week 21 starts 5/19, but the training is on 5/22. So there.
 		week1: '2024-05-26',
 		week2: '2024-06-02',
 		week3: '2024-06-09',
-		week28: '2024-07-07', // ugh - switching from FSY weeks to week of the year? who writes this garbage?
-		week29: '2024-07-14',
-		week30: '2024-07-21'
+		week4: '2024-06-16',
+		week5: '2024-06-23',
+		week6: '2024-06-30',
+		week7: '2024-07-07',
+		week8: '2024-07-14',
+		week9: '2024-07-21'
 	}
 
 	// Utils/helper functions
@@ -2772,7 +2775,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		application.progress.hireContext = local.hireContext
 		createHiringInfo(local.hireContext, "Counselor", "AB", "CAN")
-		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week29, variables.dates.week30], 2)
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week8, variables.dates.week9], 2)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001473,10001506")
 
@@ -2868,7 +2871,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.person_id = createPerson("M")
 		local.hireContext = createHireContext(local.person_id, local.program)
 		createHiringInfo(local.hireContext, "Counselor", "OR")
-		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week30], 1)
+		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week9], 1)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001521") // FSY OR Monmouth 02
 
@@ -2884,12 +2887,28 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.person_id = createPerson("M")
 		local.hireContext = createHireContext(local.person_id, local.program)
 		createHiringInfo(local.hireContext, "Counselor", "UT")
-		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week30], 1)
+		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week9], 1)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001521") // FSY OR Monmouth 02
 
 		runScheduler()
 		assertCandidatesAssigned(1)
+	}
+
+	private void function testTravelBalanceLocalOnly() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4], 3)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001322,10001349,10001378") // FSY UT Provo 02/3/4A
+
+		runScheduler()
+		assertCandidatesAssigned(3)
 	}
 
 	private void function testAlreadyAssignedOneAvailOneLinked() hiringTest {
