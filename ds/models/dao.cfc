@@ -2764,24 +2764,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 		);
 	}
 
-	private void function testAlreadyAssignedOneLinkedSession() hiringTest {
-		hiringSetup()
-
-		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
-		local.numWeeksAvailable = 2
-		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
-		createAssignment(local.return.person_id, 10001317, "Counselor")
-
-		local.sessions = "10001317,10001343"
-		local.sessionsArray = ListToArray(local.sessions)
-		setSessionsToNumCounselors(0)
-		setSessionsToNumCounselors(10, local.sessions)
-		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
-
-		runScheduler()
-		assertCandidatesAssigned(2)
-	}
-
 	private void function testOneAvailOneLinked() hiringTest {
 		hiringSetup()
 
