@@ -2455,7 +2455,17 @@ component threadSafe extends="o3.internal.cfc.model" {
 		}
 	}
 
-	// Utils
+	variables.dates = {
+		week0: '2024-05-22', // week 21 starts 5/19
+		week1: '2024-05-26',
+		week2: '2024-06-02',
+		week3: '2024-06-09',
+		week28: '2024-07-07',
+		week29: '2024-07-14',
+		week30: '2024-07-21'
+	}
+
+	// Utils/helper functions
 	public void function removeAllCandidates() {
 		queryExecute("
 			DELETE emergency_info WHERE context IN (
@@ -2588,6 +2598,61 @@ component threadSafe extends="o3.internal.cfc.model" {
 		unlinkAllSessions()
 	}
 
+	private void function setSessionStaffNeeds(
+		required numeric numToSetTo,
+		string sessions = "",
+		string type = "cn", // cn | ac | hc | cd
+		boolean reset = false
+	) {
+		// first, reset to 0
+		if (!arguments.reset) setSessionStaffNeeds(numToSetTo = 0, type = arguments.type, reset = true);
+
+		local.year = getModel("fsyDAO").getFSYYear().year
+		if (arguments.sessions == "") {
+			//get all the sessions
+			local.pmSessions = QueryExecute(
+				"select pm_session_id from pm_session where YEAR(start_date) = :year",
+				{ year: local.year }, { datasource = variables.dsn.local }
+			);
+			local.sessions = ValueList(local.pmSessions.pm_session_id);
+		} else {
+			//use the passed in sessions
+			local.sessions = arguments.sessions;
+		}
+
+		QueryExecute("
+			update pm_session set
+				#arguments.type == "cn" ? "cn_male = :numToSetTo," : ""#
+				#arguments.type == "ac" ? "ac_male = :numToSetTo," : ""#
+				#arguments.type == "hc" ? "hc_male = :numToSetTo," : ""#
+				#arguments.type == "cd" ? "cd_male = :numToSetTo," : ""#
+				#arguments.type == "cn" ? "cn_female = :numToSetTo," : ""#
+				#arguments.type == "ac" ? "ac_female = :numToSetTo," : ""#
+				#arguments.type == "hc" ? "hc_female = :numToSetTo," : ""#
+				#arguments.type == "cd" ? "cd_female = :numToSetTo" : ""#
+				updated_by = :updated_by where pm_session_id in (:sessions)
+			",
+			{ numToSetTo = arguments.numToSetTo, updated_by = variables.ticket, sessions = { value = local.sessions, list = true }, type: arguments.type },
+			{ datasource = variables.dsn.local }
+		);
+	}
+
+	private struct function setupForScheduler(
+		required array availability,
+		required numeric numWeeksAvailable
+	) {
+		local.program = getProgram()
+		application.progress.append({ program: local.program })
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id: local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext: local.hireContext })
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, arguments.availability, arguments.numWeeksAvailable)
+
+		return { person_id = local.person_id };
+	}
+
 	// Tests
 	private void function testDryRun() hiringTest {
 		// no one to assign
@@ -2595,15 +2660,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		runScheduler()
 		assertCandidatesAssigned(0)
-	}
-
-	variables.dates = {
-		week0: '2024-05-22', // week 21 starts 5/19
-		week1: '2024-05-26',
-		week2: '2024-06-02',
-		week3: '2024-06-09',
-		week28: '2024-07-07',
-		week29: '2024-07-14'
 	}
 
 	private void function testHappyPath() hiringTest {
@@ -2654,77 +2710,11 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		application.progress.hireContext = local.hireContext
 		createHiringInfo(local.hireContext, "Counselor", "AB", "CAN")
-		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week28], 1)
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week29, variables.dates.week30], 2)
+		setSessionStaffNeeds(1, "10001473,10001506")
 
 		runScheduler()
-		assertCandidatesAssigned(1)
-	}
-
-/*
-	private void function testAlreadyAssignedTwoLinkedSessions() hiringTest {
-		hiringSetup()
-
-		local.program = getProgram()
-		application.progress.append({ program: local.program })
-		local.person_id = createPerson("M")
-		application.progress.append({ person_id: local.person_id })
-		local.hireContext = createHireContext(local.person_id, local.program)
-		application.progress.append({ hireContext: local.hireContext })
-		createHiringInfo(local.hireContext, "Counselor", "UT")
-		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3], 3)
-		createAssignment(local.person_id, 10001317, "Counselor")
-		linkSessions(10001317, 10001343)
-		linkSessions(10001343, 10001372)
-
-		runScheduler()
-		assertCandidatesAssigned(3)
-	}
-*/
-
-	private struct function setupForScheduler(
-		required array availability,
-		required numeric numWeeksAvailable
-	) {
-		local.program = getProgram()
-		application.progress.append({ program: local.program })
-		local.person_id = createPerson("M")
-		application.progress.append({ person_id: local.person_id })
-		local.hireContext = createHireContext(local.person_id, local.program)
-		application.progress.append({ hireContext: local.hireContext })
-		createHiringInfo(local.hireContext, "Counselor", "UT")
-		createAvailability(local.hireContext, arguments.availability, arguments.numWeeksAvailable)
-
-		return { person_id = local.person_id };
-	}
-
-	private void function setSessionsToNumCounselors(
-		required numeric numToSetTo,
-		string sessions = ""
-	) {
-		if (arguments.sessions == "") {
-			//get all the sessions
-			local.pmSessions = QueryExecute(
-				"
-				select pm_session_id
-				from pm_session
-				where start_date > '2024-01-01'
-				",
-				{},
-				{ datasource = variables.dsn.local }
-			);
-			local.sessions = ValueList(local.pmSessions.pm_session_id);
-		} else {
-			//use the passed in sessions
-			local.sessions = arguments.sessions;
-		}
-
-		QueryExecute(
-			"
-			update pm_session set cn_male = :numToSetTo, cn_female = :numToSetTo, updated_by = :updated_by where pm_session_id in (:sessions)
-		",
-			{ numToSetTo = arguments.numToSetTo, updated_by = variables.ticket, sessions = { value = local.sessions, list = true } },
-			{ datasource = variables.dsn.local }
-		);
+		assertCandidatesAssigned(2)
 	}
 
 	private void function testAlreadyAssignedOneAvailOneLinked() hiringTest {
@@ -2736,8 +2726,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		local.sessions = "10001317,10001343"
 		local.sessionsArray = ListToArray(local.sessions)
-		setSessionsToNumCounselors(0)
-		setSessionsToNumCounselors(10, local.sessions)
+		setSessionStaffNeeds(10, local.sessions)
 		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
 
 		runScheduler()
@@ -2753,8 +2742,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		local.sessions = "10001317,10001343"
 		local.sessionsArray = ListToArray(local.sessions)
-		setSessionsToNumCounselors(0)
-		setSessionsToNumCounselors(10, local.sessions)
+		setSessionStaffNeeds(10, local.sessions)
 //		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
 
 		runScheduler()
