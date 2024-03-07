@@ -2676,9 +2676,11 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 	private void function testAlreadyAssignedOneAvailOneLinked() hiringTest {
 		hiringSetup()
+
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
 		local.numWeeksAvailable = 1
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
 		local.sessions = "10001317,10001343"
 		local.sessionsArray = ListToArray(local.sessions)
 		setSessionsToNumCounselors(0)
@@ -2687,6 +2689,23 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		runScheduler()
 		assertCandidatesAssigned(0)
+	}
+
+	private void function testAlreadyAssignedTwoAvailOneLinked() hiringTest {
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		local.sessions = "10001317,10001343"
+		local.sessionsArray = ListToArray(local.sessions)
+		setSessionsToNumCounselors(0)
+		setSessionsToNumCounselors(10, local.sessions)
+//		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
+
+		runScheduler()
+		assertCandidatesAssigned(2)
 	}
 
 }
