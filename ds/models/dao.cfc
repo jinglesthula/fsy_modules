@@ -2639,7 +2639,8 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 	private struct function setupForScheduler(
 		required array availability,
-		required numeric numWeeksAvailable
+		required numeric numWeeksAvailable,
+		required string state = "UT"
 	) {
 		local.program = getProgram()
 		application.progress.append({ program: local.program })
@@ -2647,7 +2648,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ person_id: local.person_id })
 		local.hireContext = createHireContext(local.person_id, local.program)
 		application.progress.append({ hireContext: local.hireContext })
-		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createHiringInfo(local.hireContext, "Counselor", arguments.state)
 		createAvailability(local.hireContext, arguments.availability, arguments.numWeeksAvailable)
 
 		return { person_id = local.person_id };
@@ -2717,22 +2718,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 		runScheduler()
 		assertCandidatesAssigned(2)
 	}		
-	private struct function setupForScheduler(
-		required array availability,
-		required numeric numWeeksAvailable,
-		required string state = "UT"
-	) {
-		local.program = getProgram()
-		application.progress.append({ program: local.program })
-		local.person_id = createPerson("M")
-		application.progress.append({ person_id: local.person_id })
-		local.hireContext = createHireContext(local.person_id, local.program)
-		application.progress.append({ hireContext: local.hireContext })
-		createHiringInfo(local.hireContext, "Counselor", arguments.state)
-		createAvailability(local.hireContext, arguments.availability, arguments.numWeeksAvailable)
-
-		return { person_id = local.person_id };
-	}
 
 	private void function setSessionsToNumCounselors(
 		required numeric numToSetTo,
@@ -2789,8 +2774,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		local.sessions = "10001301,10001302"
 		local.sessionsArray = ListToArray(local.sessions)
-		setSessionsToNumCounselors(0)
-		setSessionsToNumCounselors(10, local.sessions)
+		setSessionStaffNeeds(10, local.sessions, true)
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -2820,8 +2804,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		local.sessions = "10001301,10001322"
 		local.sessionsArray = ListToArray(local.sessions)
-		setSessionsToNumCounselors(0)
-		setSessionsToNumCounselors(10, local.sessions)
+		setSessionStaffNeeds(10, local.sessions, true)
 
 		runScheduler()
 		assertCandidatesAssigned(2)
@@ -2836,8 +2819,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		local.sessions = "10001317,10001343"
 		local.sessionsArray = ListToArray(local.sessions)
-		setSessionsToNumCounselors(0)
-		setSessionsToNumCounselors(10, local.sessions)
+		setSessionStaffNeeds(10, local.sessions, true)
 		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
 
 		runScheduler()
@@ -2853,8 +2835,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		local.sessions = "10001317,10001343"
 		local.sessionsArray = ListToArray(local.sessions)
-		setSessionsToNumCounselors(0)
-		setSessionsToNumCounselors(10, local.sessions)
+		setSessionStaffNeeds(10, local.sessions, true)
 		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
 
 		runScheduler()
