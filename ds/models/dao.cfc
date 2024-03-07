@@ -2844,6 +2844,54 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssignedTraining(23, 1)
 	}
 
+	private void function testResidenceUtah() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week2], 1)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001322") // FSY UT Provo 02A
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+	}
+
+	private void function testResidenceOregon() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Counselor", "OR")
+		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week30], 1)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001521") // FSY OR Monmouth 02
+
+		runScheduler()
+		assertCandidatesAssigned(0)
+	}
+
+	private void function testResidenceUtahToOregon() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week30], 1)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001521") // FSY OR Monmouth 02
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+	}
+
 	private void function testAlreadyAssignedOneAvailOneLinked() hiringTest {
 		hiringSetup()
 
