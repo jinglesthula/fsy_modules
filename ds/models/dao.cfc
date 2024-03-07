@@ -6,7 +6,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 	variables.dsn.scheduler = variables.dsn.local
 	variables.dsn.prereg = variables.dsn.prod
 	variables.realProgram = 80000082
-	variables.trainingProgram = 80041146
+	variables.trainingProgram = structKeyExists(application, "trainingProgram") ? application.trainingProgram : 80041146
 	variables.ticket = "FSY-1511"
 	variables.ticketName = reReplace(variables.ticket, "-", "_", "all")
 
