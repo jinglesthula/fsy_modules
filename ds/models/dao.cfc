@@ -2658,12 +2658,8 @@ component threadSafe extends="o3.internal.cfc.model" {
 	private void function setSessionStaffNeeds(
 		required numeric numToSetTo,
 		string sessions = "",
-		string type = "cn", // cn | ac | hc | cd
-		boolean reset = false
+		string type = "cn" // cn | ac | hc | cd
 	) {
-		// first, reset to 0
-		if (!arguments.reset) setSessionStaffNeeds(numToSetTo = 0, type = arguments.type, reset = true);
-
 		local.year = getModel("fsyDAO").getFSYYear().year
 		if (arguments.sessions == "") {
 			//get all the sessions
@@ -2777,6 +2773,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.hireContext = local.hireContext
 		createHiringInfo(local.hireContext, "Counselor", "AB", "CAN")
 		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week29, variables.dates.week30], 2)
+		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001473,10001506")
 
 		runScheduler()
@@ -2830,6 +2827,23 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssignedTraining(22, 2)
 	}
 
+	private void function testTrainingClosestToFirstSession() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week2, variables.dates.week3], 1)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001343")
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+		assertCandidatesAssignedTraining(23, 1)
+	}
+
 	private void function testAlreadyAssignedOneAvailOneLinked() hiringTest {
 		hiringSetup()
 
@@ -2839,6 +2853,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		local.sessions = "10001317,10001343"
 		local.sessionsArray = ListToArray(local.sessions)
+		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
 		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
 
@@ -2855,6 +2870,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		local.sessions = "10001317,10001343"
 		local.sessionsArray = ListToArray(local.sessions)
+		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
 //		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
 
