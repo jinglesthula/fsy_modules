@@ -2406,6 +2406,35 @@ component threadSafe extends="o3.internal.cfc.model" {
 	}
 
 	//////////////////////////////////////////////////////////
+	// How is FSY regular reg going?
+	//////////////////////////////////////////////////////////
+	public array function regularRegStats() {
+		local.result = [];
+
+		for (local.i = 0; local.i < 10; local.i += 1) {
+			local.hourStats = queryExecute("
+				DECLARE @now datetime2 = (SELECT SYSDATETIME());
+				DECLARE @endHour datetime2 = (SELECT DATETIMEFROMPARTS(YEAR(@now), MONTH(@now), DAY(@now), DATEPART(HOUR, @now), 0, 0, 0))
+				SELECT
+					COUNT(*) AS total,
+					DATEADD(hour, -:hour - 1, (DATEADD(MINUTE, (60 - DATEPART(MINUTE, SYSDATETIME())) % 60, SYSDATETIME()))) AS [hour]
+				FROM context
+					INNER JOIN product on product.product_id = context.product AND product.master_type = 'Section' AND product.program = :program
+				WHERE context.context_type = 'Enrollment'
+					AND context.status = 'Active'
+					AND context.enroll_date between
+						DATEADD(hour, -:hour - 1, (DATEADD(MINUTE, (60 - DATEPART(MINUTE, SYSDATETIME())) % 60, SYSDATETIME()))) AND
+						DATEADD(hour, -:hour, (DATEADD(MINUTE, (60 - DATEPART(MINUTE, SYSDATETIME())) % 60, SYSDATETIME())))
+
+			", { program: variables.realProgram, hour: {value: local.i, cfsqltype: "cf_sql_numeric"} }, { datasource = variables.dsn.prod });
+
+			local.result.prepend({ count: local.hourStats.total, hour: local.hourStats.hour });
+		}
+
+		return local.result;
+	}
+
+	//////////////////////////////////////////////////////////
 	// This is the part where we test hiring scheduler
 	//////////////////////////////////////////////////////////
 
@@ -2413,7 +2442,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		try {
 			local.hiringTest = true // metadata blah blah == "hiringTest"
 			if (local.hiringTest)
-				application.progress = []
+				application.progress = {}
 
 			invoke("", missingMethodName, missingMethodArguments)
 			return { pass: true }
@@ -2572,7 +2601,9 @@ component threadSafe extends="o3.internal.cfc.model" {
 		week0: '2024-05-22', // week 21 starts 5/19
 		week1: '2024-05-26',
 		week2: '2024-06-02',
-		week3: '2024-06-09'
+		week3: '2024-06-09',
+		week28: '2024-07-07',
+		week29: '2024-07-14'
 	}
 
 	private void function testHappyPath() hiringTest {
@@ -2585,6 +2616,46 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1])
 		setSessionsToNumCounselors(10)
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+	}
+
+	private void function testAlreadyAssignedOneLinkedSession() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.program = local.program
+		local.person_id = createPerson("M")
+		application.progress.person_id = local.person_id
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.hireContext = local.hireContext
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3], 1)
+		createAssignment(local.person_id, 10001317, "Counselor")
+		linkSessions(10001317, 10001343)
+
+		runScheduler()
+		assertCandidatesAssigned(3)
+	}
+
+	private void function testCanadaSameProvince() hiringTest {
+		// - Alberta -> Alberta
+		// - residency is Alberta
+		// - only session available is Alberta
+		// - outcome
+		// 	- person is assigned
+
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.program = local.program
+		local.person_id = createPerson("M")
+		application.progress.person_id = local.person_id
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.hireContext = local.hireContext
+		createHiringInfo(local.hireContext, "Counselor", "AB", "CAN")
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week28], 1)
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -2656,24 +2727,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 			{ numToSetTo = arguments.numToSetTo, updated_by = variables.ticket, sessions = { value = local.sessions, list = true } },
 			{ datasource = variables.dsn.local }
 		);
-	}
-
-	private void function testAlreadyAssignedOneLinkedSession() hiringTest {
-		hiringSetup()
-
-		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
-		local.numWeeksAvailable = 2
-		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
-		createAssignment(local.return.person_id, 10001317, "Counselor")
-
-		local.sessions = "10001317,10001343"
-		local.sessionsArray = ListToArray(local.sessions)
-		setSessionsToNumCounselors(0)
-		setSessionsToNumCounselors(10, local.sessions)
-		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
-
-		runScheduler()
-		assertCandidatesAssigned(2)
 	}
 
 	private void function testOneAvailOneLinked() hiringTest {
