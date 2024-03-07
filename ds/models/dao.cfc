@@ -2584,27 +2584,10 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1])
+		setSessionsToNumCounselors(10)
 
 		runScheduler()
 		assertCandidatesAssigned(1)
-	}
-
-	private void function testAlreadyAssignedOneLinkedSession() hiringTest {
-		hiringSetup()
-
-		local.program = getProgram()
-		application.progress.append({ program: local.program })
-		local.person_id = createPerson("M")
-		application.progress.append({ person_id: local.person_id })
-		local.hireContext = createHireContext(local.person_id, local.program)
-		application.progress.append({ hireContext: local.hireContext })
-		createHiringInfo(local.hireContext, "Counselor", "UT")
-		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3], 3)
-		createAssignment(local.person_id, 10001317, "Counselor")
-		linkSessions(10001317, 10001343)
-
-		runScheduler()
-		assertCandidatesAssigned(3)
 	}
 
 /*
@@ -2630,7 +2613,8 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 	private struct function setupForScheduler(
 		required array availability,
-		required numeric numWeeksAvailable
+		required numeric numWeeksAvailable,
+		required string state = "UT"
 	) {
 		local.program = getProgram()
 		application.progress.append({ program: local.program })
@@ -2638,7 +2622,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ person_id: local.person_id })
 		local.hireContext = createHireContext(local.person_id, local.program)
 		application.progress.append({ hireContext: local.hireContext })
-		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createHiringInfo(local.hireContext, "Counselor", arguments.state)
 		createAvailability(local.hireContext, arguments.availability, arguments.numWeeksAvailable)
 
 		return { person_id = local.person_id };
@@ -2674,7 +2658,25 @@ component threadSafe extends="o3.internal.cfc.model" {
 		);
 	}
 
-	private void function testAlreadyAssignedOneAvailOneLinked() hiringTest {
+	private void function testAlreadyAssignedOneLinkedSession() hiringTest {
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+		createAssignment(local.return.person_id, 10001317, "Counselor")
+
+		local.sessions = "10001317,10001343"
+		local.sessionsArray = ListToArray(local.sessions)
+		setSessionsToNumCounselors(0)
+		setSessionsToNumCounselors(10, local.sessions)
+		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
+
+		runScheduler()
+		assertCandidatesAssigned(2)
+	}
+
+	private void function testOneAvailOneLinked() hiringTest {
 		hiringSetup()
 
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
@@ -2691,7 +2693,23 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssigned(0)
 	}
 
-	private void function testAlreadyAssignedTwoAvailOneLinked() hiringTest {
+	private void function testTwoAvailSameWeek() hiringTest {
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		local.sessions = "10001301,10001302"
+		local.sessionsArray = ListToArray(local.sessions)
+		setSessionsToNumCounselors(0)
+		setSessionsToNumCounselors(10, local.sessions)
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+	}
+
+	private void function testTwoAvailNotLinkedNotLocal() hiringTest {
 		hiringSetup()
 
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
@@ -2702,10 +2720,59 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.sessionsArray = ListToArray(local.sessions)
 		setSessionsToNumCounselors(0)
 		setSessionsToNumCounselors(10, local.sessions)
-//		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+	}
+
+	private void function testTwoAvailLocal() hiringTest {
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		local.sessions = "10001301,10001322"
+		local.sessionsArray = ListToArray(local.sessions)
+		setSessionsToNumCounselors(0)
+		setSessionsToNumCounselors(10, local.sessions)
 
 		runScheduler()
 		assertCandidatesAssigned(2)
+	}
+
+	private void function testTwoAvailLinkedNotLocal() hiringTest {
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		local.sessions = "10001317,10001343"
+		local.sessionsArray = ListToArray(local.sessions)
+		setSessionsToNumCounselors(0)
+		setSessionsToNumCounselors(10, local.sessions)
+		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
+
+		runScheduler()
+		assertCandidatesAssigned(2)
+	}
+
+	private void function testTwoAvailLinkedTXIsTXResident() hiringTest { //in this test, the linked sessions are TX and the counselor is a resident of TX: should be assigned 0
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable, "TX")
+
+		local.sessions = "10001317,10001343"
+		local.sessionsArray = ListToArray(local.sessions)
+		setSessionsToNumCounselors(0)
+		setSessionsToNumCounselors(10, local.sessions)
+		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
+
+		runScheduler()
+		assertCandidatesAssigned(0)
 	}
 
 }
