@@ -2480,15 +2480,15 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 	variables.dates = {
 		week0: '2024-05-22', // week 21 starts 5/19, but the training is on 5/22. So there.
-		week1: '2024-05-26',
-		week2: '2024-06-02',
-		week3: '2024-06-09',
-		week4: '2024-06-16',
-		week5: '2024-06-23',
-		week6: '2024-06-30',
-		week7: '2024-07-07',
-		week8: '2024-07-14',
-		week9: '2024-07-21'
+		week1: '2024-05-26', // 22
+		week2: '2024-06-02', // 23
+		week3: '2024-06-09', // 24
+		week4: '2024-06-16', // 25
+		week5: '2024-06-23', // 26
+		week6: '2024-06-30', // 27
+		week7: '2024-07-07', // 28
+		week8: '2024-07-14', // 29
+		week9: '2024-07-21'  // 30
 	}
 
 	// Utils/helper functions
@@ -3042,9 +3042,11 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
 		createAssignment(local.person_id, 10001361, "Counselor")
 		createAssignment(local.person_id, 10001349, "Counselor")
-		local.limitToSessions = [ 10001310 ] // travel week 2, local week 3, travel week 4
+		// travel week 2, local week 3, travel week 4
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001310")
 
-		runScheduler(local.limitToSessions)
+		runScheduler()
 		assertCandidatesAssigned(3)
 	}
 
