@@ -2611,6 +2611,26 @@ component threadSafe extends="o3.internal.cfc.model" {
 			throw(type="assertCandidatesAssignedTraining", message="Expected: week #arguments.week#, order #arguments.order#");
 	}
 
+	public void function assertCandidatesAssignedSpecificSessions(required string sessions) {
+		var assigned = queryExecute("
+			SELECT pm_session.pm_session_id
+			FROM context
+				INNER JOIN pm_session ON context.product = pm_session.product
+			WHERE context_type IN ('Counselor')
+				AND context.product in (:sessions)
+				AND context.status = 'Active'
+				AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
+		", { sessions = { value = arguments.sessions, list = true } }, { datasource: variables.dsn.local });
+
+		local.dbSessions = ValueArray(assigned, "pm_session_id")
+		ArraySort(local.dbSessions, "numeric")
+		local.checkSessions = ListToArray(arguments.sessions)
+		ArraySort(local.checkSessions, "numeric")
+
+		if (!local.dbSessions.equals(local.checkSessions))
+			throw(type="assertCandidatesAssignedSpecificSessions", message="Expected: #SerializeJSON(local.checkSessions)# Actual: #SerializeJSON(local.dbSessions)#");
+	}
+
 	public any function runScheduler() {
 		local.users = getModel("fsyDAO").getAvailableHires(getModel("fsyDAO").getFSYYear().year);
 		local.scheduler = getModel("employmentSchedulerS");
@@ -2693,6 +2713,21 @@ component threadSafe extends="o3.internal.cfc.model" {
 		);
 	}
 
+	private void function setPeakWeeks(
+		required string sessions = ""
+	) {
+		QueryExecute("
+			update pm_session
+			set
+				peak_week = 'Y',
+				updated_by = :updated_by
+			where pm_session_id in (:sessions)
+			",
+			{ updated_by = variables.ticket, sessions = { value = arguments.sessions, list = true } },
+			{ datasource = variables.dsn.local }
+		);
+	}
+
 	private struct function setupForScheduler(
 		required array availability,
 		required numeric numWeeksAvailable,
@@ -2728,7 +2763,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1])
-		setSessionsToNumCounselors(10)
+		setSessionStaffNeeds(10)
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -3007,5 +3042,68 @@ component threadSafe extends="o3.internal.cfc.model" {
 		runScheduler()
 		assertCandidatesAssigned(0)
 	}
+
+	private void function testOneAvailPeakWeek() hiringTest { //with three sessions (one a peak week), gets assigned the peak week
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		local.sessions = "10001301,10001322"
+		local.sessionsArray = ListToArray(local.sessions)
+		setSessionStaffNeeds(10, local.sessions, true)
+		setPeakWeeks("10001322")
+
+		runScheduler()
+		assertCandidatesAssignedSpecificSessions("10001322")
+	}
+
+	private void function testOneAvailDesirability0() hiringTest {
+		//with three sessions (0, -1, 1), gets assigned desirability of 0
+	}
+
+	private void function testOneAvailTimeframe() hiringTest {
+		//with three sessions (only one in the timeframe of availability), gets the one within the timeframe
+	}
+
+	private void function testTwoAvailLinkedTXIsTXResidentTrainingInTx() hiringTest {
+		//same as testTwoAvailLinkedTXIsTXResident but with training in TX
+	}
+
+	private void function testOneAvailTxResidentUtahTxPeakWeeks() hiringTest {
+		//with three sessions (one texas, two utah, one TX peak week and one UT peak week), gets assigned UT peak week
+	}
+
+	private void function testOneAvailTxResidentUtahTxPeakWeeksDesirability() hiringTest {
+		//with three sessions (one texas, two utah, one TX peak week, desirability is -1 and 0 in UT), gets assigned UT 0 desirability
+	}
+
+//+ask Eli about this one - 2 week 1 training in Utah	Timeframe
+
+	private void function testTwoAvailLocalAndTravelTimeframe() hiringTest {
+		//with three sessions (1 UT, 1 TX, 1 AZ with ), gets assigned 
+	}
+
+	private void function testTwoAvailLocalAndTravelDesirability() hiringTest {
+		//with three sessions (1 UT, 1 TX, 1 AZ with desirabilities 1, 0, -1), gets assigned 1 and -1
+	}
+
+	private void function testTwoAvailLocalAndTravelPeakWeek() hiringTest {
+		//with three sessions (1 UT, 1 TX, 1 AZ with AZ having peak week), gets assigned UT and AZ
+	}
+
+	private void function testFourAvailTimeFrame() hiringTest {
+		//with available weeks 1, 3, 4, 5 and 6 sessions (UT, AZ, AK, UT, UT, ID lettered A B C D E F with time frames Wks 3, 1, 2, 4, 5, 1 respectively), gets assigned sessions A, B, D, and E
+	}
+
+
+
+
+
+
+//	private void function testOneAvail() hiringTest {
+//		//with three sessions (), gets assigned __
+//	}
 
 }
