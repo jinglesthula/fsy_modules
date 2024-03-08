@@ -2927,6 +2927,127 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssigned(1)
 	}
 
+	private void function testBackToBack_Local_Travel() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.append({ program = local.program })
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id = local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 2)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001322")
+		setSessionStaffNeeds(1, "10001345")
+
+		runScheduler()
+		assertCandidatesAssigned(2)
+	}
+
+	private void function testBackToBack_Travel_Travel() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.append({ program = local.program })
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id = local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 2)
+		// travel week 2, travel week 3
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001310")
+		setSessionStaffNeeds(1, "10001345")
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+	}
+
+	private void function testBackToBack_Local_Travel_Travel() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.append({ program = local.program })
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id = local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
+		createAssignment(local.person_id, 10001322, "Counselor")
+		createAssignment(local.person_id, 10001310, "Counselor")
+		// local week 2, travel week 3, travel week 4
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001337")
+
+		runScheduler()
+		assertCandidatesAssigned(2)
+	}
+
+	private void function testBackToBack_Travel_Travel_Local() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.append({ program = local.program })
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id = local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
+		createAssignment(local.person_id, 10001345, "Counselor")
+		createAssignment(local.person_id, 10001378, "Counselor")
+		// travel week 2, travel week 3, local week 4
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001310")
+
+		runScheduler()
+		assertCandidatesAssigned(2)
+	}
+
+	private void function testBackToBack_Travel_Local_Travel_After() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.append({ program = local.program })
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id = local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
+		createAssignment(local.person_id, 10001310, "Counselor")
+		createAssignment(local.person_id, 10001349, "Counselor")
+		// travel week 2, local week 3, travel week 4
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001361")
+
+		runScheduler()
+		assertCandidatesAssigned(3)
+	}
+
+	private void function testBackToBack_Travel_Local_Travel_Before() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.append({ program = local.program })
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id = local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
+		createAssignment(local.person_id, 10001361, "Counselor")
+		createAssignment(local.person_id, 10001349, "Counselor")
+		local.limitToSessions = [ 10001310 ] // travel week 2, local week 3, travel week 4
+
+		runScheduler(local.limitToSessions)
+		assertCandidatesAssigned(3)
+	}
+
 	private void function testAlreadyAssignedOneAvailOneLinked() hiringTest {
 		hiringSetup()
 
