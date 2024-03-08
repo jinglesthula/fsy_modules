@@ -2617,13 +2617,14 @@ component threadSafe extends="o3.internal.cfc.model" {
 			FROM context
 				INNER JOIN pm_session ON context.product = pm_session.product
 			WHERE context_type IN ('Counselor')
-				AND context.product in (:sessions)
+				AND pm_session.pm_session_id in (:sessions)
 				AND context.status = 'Active'
 				AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 		", { sessions = { value = arguments.sessions, list = true } }, { datasource: variables.dsn.local });
 
 		local.dbSessions = ValueArray(assigned, "pm_session_id")
 		ArraySort(local.dbSessions, "numeric")
+		local.dbSessions = ListToArray(ArrayToList(local.dbSessions))
 		local.checkSessions = ListToArray(arguments.sessions)
 		ArraySort(local.checkSessions, "numeric")
 
@@ -3047,12 +3048,12 @@ component threadSafe extends="o3.internal.cfc.model" {
 		hiringSetup()
 
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
-		local.numWeeksAvailable = 2
+		local.numWeeksAvailable = 1
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
 
 		local.sessions = "10001301,10001322"
 		local.sessionsArray = ListToArray(local.sessions)
-		setSessionStaffNeeds(10, local.sessions, true)
+		setSessionStaffNeeds(10, local.sessions)
 		setPeakWeeks("10001322")
 
 		runScheduler()
@@ -3061,6 +3062,20 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 	private void function testOneAvailDesirability0() hiringTest {
 		//with three sessions (0, -1, 1), gets assigned desirability of 0
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.numWeeksAvailable = 1
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		local.sessions = "10001301,10001322"
+		local.sessionsArray = ListToArray(local.sessions)
+		setSessionStaffNeeds(10, local.sessions)
+		local.desirabilities = []
+		setDesirability(local.desirabilities)
+
+		runScheduler()
+		assertCandidatesAssignedSpecificSessions("10001322")
 	}
 
 	private void function testOneAvailTimeframe() hiringTest {
