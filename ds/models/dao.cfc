@@ -2617,7 +2617,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 			FROM context
 				INNER JOIN pm_session ON context.product = pm_session.product
 			WHERE context_type IN ('Counselor')
-				AND pm_session.pm_session_id in (:sessions)
 				AND context.status = 'Active'
 				AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 		", { sessions = { value = arguments.sessions, list = true } }, { datasource: variables.dsn.local });
@@ -2725,6 +2724,22 @@ component threadSafe extends="o3.internal.cfc.model" {
 			where pm_session_id in (:sessions)
 			",
 			{ updated_by = variables.ticket, sessions = { value = arguments.sessions, list = true } },
+			{ datasource = variables.dsn.local }
+		);
+	}
+
+	private void function setDesirability(
+		required string sessions = "",
+		required numeric desirability
+	) {
+		QueryExecute("
+			update pm_session
+			set
+				desirability = :desirability,
+				updated_by = :updated_by
+			where pm_session_id in (:sessions)
+			",
+			{ desirability = arguments.desirability, updated_by = variables.ticket, sessions = { value = arguments.sessions, list = true } },
 			{ datasource = variables.dsn.local }
 		);
 	}
@@ -3068,7 +3083,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
 
 		local.sessions = "10001301,10001322"
-		local.sessionsArray = ListToArray(local.sessions)
 		setSessionStaffNeeds(10, local.sessions)
 		setPeakWeeks("10001322")
 
@@ -3084,14 +3098,14 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.numWeeksAvailable = 1
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
 
-		local.sessions = "10001301,10001322"
-		local.sessionsArray = ListToArray(local.sessions)
+		local.sessions = "10001322,10001323,10001324"
 		setSessionStaffNeeds(10, local.sessions)
-		local.desirabilities = []
-		setDesirability(local.desirabilities)
+		setDesirability("10001322", -1)
+		setDesirability("10001323", 0)
+		setDesirability("10001324", 1)
 
 		runScheduler()
-		assertCandidatesAssignedSpecificSessions("10001322")
+		assertCandidatesAssignedSpecificSessions("10001323")
 	}
 
 	private void function testOneAvailTimeframe() hiringTest {
