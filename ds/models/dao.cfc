@@ -3019,8 +3019,8 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ hireContext = local.hireContext })
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
-		createAssignment(local.person_id, 10001310, "Counselor")
-		createAssignment(local.person_id, 10001349, "Counselor")
+		createAssignment(local.person_id, 10001310, "Counselor") // 23
+		createAssignment(local.person_id, 10001349, "Counselor") // 24
 		// travel week 2, local week 3, travel week 4
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001361")
