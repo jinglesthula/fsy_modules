@@ -2434,7 +2434,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 	public array function regularRegStats() {
 		local.result = [];
 
-		for (local.i = 0; local.i < 10; local.i += 1) {
+		for (local.i = 0; local.i < 24; local.i += 1) {
 			local.hourStats = queryExecute("
 				DECLARE @now datetime2 = (SELECT SYSDATETIME());
 				DECLARE @endHour datetime2 = (SELECT DATETIMEFROMPARTS(YEAR(@now), MONTH(@now), DAY(@now), DATEPART(HOUR, @now), 0, 0, 0))
@@ -2780,7 +2780,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		application.progress.hireContext = local.hireContext
 		createHiringInfo(local.hireContext, "Counselor", "UT")
-		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3], 1)
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3], 3)
 		createAssignment(local.person_id, 10001317, "Counselor")
 		linkSessions(10001317, 10001343)
 
@@ -2947,6 +2947,22 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		runScheduler()
 		assertCandidatesAssigned(3)
+	}
+
+	private void function testTravelBalanceTravelOnly() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week9], 1)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001521") // FSY OR Monmouth 02
+
+		runScheduler()
+		assertCandidatesAssigned(1)
 	}
 
 	private void function testAlreadyAssignedOneAvailOneLinked() hiringTest {
