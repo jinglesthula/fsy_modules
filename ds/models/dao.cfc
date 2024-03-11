@@ -3545,7 +3545,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		local.sessions = "10001301,10001302"
 		local.sessionsArray = ListToArray(local.sessions)
-		setSessionStaffNeeds(10, local.sessions, true)
+		setSessionStaffNeeds(10, local.sessions)
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -3576,7 +3576,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		local.sessions = "10001301,10001322"
 		local.sessionsArray = ListToArray(local.sessions)
-		setSessionStaffNeeds(10, local.sessions, true)
+		setSessionStaffNeeds(10, local.sessions)
 
 		runScheduler()
 		assertCandidatesAssigned(2)
@@ -3591,7 +3591,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		local.sessions = "10001317,10001343"
 		local.sessionsArray = ListToArray(local.sessions)
-		setSessionStaffNeeds(10, local.sessions, true)
+		setSessionStaffNeeds(10, local.sessions)
 		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
 
 		runScheduler()
@@ -3607,7 +3607,8 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		local.sessions = "10001317,10001343"
 		local.sessionsArray = ListToArray(local.sessions)
-		setSessionStaffNeeds(10, local.sessions, true)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, local.sessions)
 		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
 
 		runScheduler()
@@ -3622,6 +3623,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
 
 		local.sessions = "10001301,10001322"
+		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
 		setPeakWeeks("10001322")
 
@@ -3638,6 +3640,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
 
 		local.sessions = "10001322,10001323,10001324"
+		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
 		setDesirability("10001322", -1)
 		setDesirability("10001323", 0)
@@ -3645,6 +3648,40 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		runScheduler()
 		assertCandidatesAssignedSpecificSessions("10001323")
+	}
+
+	private void function testTwoAvailDesirabilityPositive() hiringTest {
+		//with three sessions (0, -1, 1), gets assigned desirability of 0
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		setDesirability("10001304", -1)
+		createAssignment(local.return.person_id, 10001304, "Counselor")
+		local.sessions = "10001322,10001323,10001324"
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, local.sessions)
+		setDesirability("10001322", -1)
+		setDesirability("10001323", 0)
+		setDesirability("10001324", 1)
+
+		runScheduler()
+		assertCandidatesAssignedSpecificSessions("10001304,10001324")
+	}
+
+	private void function testCoordinator() hiringTest {
+		removeAllCandidates()
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Coordinator", "UT")
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1])
+
+		runScheduler()
+		assertCandidatesAssigned(1, "Coordinator")
 	}
 
 	private void function testOneAvailTimeframe() hiringTest {
@@ -3678,4 +3715,5 @@ component threadSafe extends="o3.internal.cfc.model" {
 	private void function testFourAvailTimeFrame() hiringTest {
 		//with available weeks 1, 3, 4, 5 and 6 sessions (UT, AZ, AK, UT, UT, ID lettered A B C D E F with time frames Wks 3, 1, 2, 4, 5, 1 respectively), gets assigned sessions A, B, D, and E
 	}
+
 }
