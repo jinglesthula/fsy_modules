@@ -2479,11 +2479,12 @@ component threadSafe extends="o3.internal.cfc.model" {
 	}
 
 	variables.dates = {
-		week0: '2024-05-22', // week 21 starts 5/19, but the training is on 5/22. So there.
-		week1: '2024-05-26', // 22
+		core: '2024-05-15', // 20 training only (for everyone other than CNs; all other trainings are for CNs only)
+		week0: '2024-05-22', // 21 - training only; week starts 5/19, but the training is on 5/22. So there.
+		week1: '2024-05-26', // 22 - first week of regular sessions
 		week2: '2024-06-02', // 23
 		week3: '2024-06-09', // 24
-		week4: '2024-06-16', // 25
+		week4: '2024-06-16', // 25 - last week of CN trainings
 		week5: '2024-06-23', // 26
 		week6: '2024-06-30', // 27
 		week7: '2024-07-07', // 28
@@ -2494,11 +2495,18 @@ component threadSafe extends="o3.internal.cfc.model" {
 	// Utils/helper functions
 	public void function removeAllCandidates() {
 		queryExecute("
+			DELETE fsy_hiring_scheduler_audit_log where person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
+		", {}, { datasource: variables.dsn.local });
+
+		queryExecute("
 			DELETE emergency_info WHERE context IN (
 				SELECT context_id
 				FROM context
 					INNER JOIN product on product = product_id
-				WHERE context_type IN ('Counselor', 'Hired Staff')
+				WHERE (
+					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
+					OR context_type = 'Hired Staff'
+				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
 					AND context.status = 'Active'
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
@@ -2510,7 +2518,10 @@ component threadSafe extends="o3.internal.cfc.model" {
 				SELECT context_id
 				FROM context
 					INNER JOIN product on product = product_id
-				WHERE context_type IN ('Counselor', 'Hired Staff')
+				WHERE (
+					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
+					OR context_type = 'Hired Staff'
+				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
 					AND context.status = 'Active'
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
@@ -2522,7 +2533,10 @@ component threadSafe extends="o3.internal.cfc.model" {
 				SELECT context_id
 				FROM context
 					INNER JOIN product on product = product_id
-				WHERE context_type IN ('Counselor', 'Hired Staff')
+				WHERE (
+					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
+					OR context_type = 'Hired Staff'
+				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
 					AND context.status = 'Active'
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
@@ -2534,7 +2548,10 @@ component threadSafe extends="o3.internal.cfc.model" {
 				SELECT context_id
 				FROM context
 					INNER JOIN product on product = product_id
-				WHERE context_type IN ('Counselor', 'Hired Staff')
+				WHERE (
+					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
+					OR context_type = 'Hired Staff'
+				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
 					AND context.status = 'Active'
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
@@ -2546,7 +2563,10 @@ component threadSafe extends="o3.internal.cfc.model" {
 				SELECT context_id
 				FROM context
 					INNER JOIN product on product = product_id
-				WHERE context_type IN ('Counselor', 'Hired Staff')
+				WHERE (
+					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
+					OR context_type = 'Hired Staff'
+				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
 					AND context.status = 'Active'
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
@@ -2558,7 +2578,10 @@ component threadSafe extends="o3.internal.cfc.model" {
 				SELECT context_id
 				FROM context
 					INNER JOIN product on product = product_id
-				WHERE context_type IN ('Counselor', 'Hired Staff')
+				WHERE (
+					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
+					OR context_type = 'Hired Staff'
+				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
 					AND context.status = 'Active'
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
@@ -2570,11 +2593,18 @@ component threadSafe extends="o3.internal.cfc.model" {
 				SELECT context_id
 				FROM context
 					INNER JOIN product on product = product_id
-				WHERE context_type IN ('Counselor', 'Hired Staff', 'Enrollment')
+				WHERE (
+					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
+					OR context_type IN ('Hired Staff', 'Enrollment')
+				)
 					AND (#variables.realProgram# IN (product.program, product.product_id) OR #variables.trainingProgram# IN (product.program, product.product_id))
 					AND context.status = 'Active'
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 			)
+		", {}, { datasource: variables.dsn.local });
+
+		queryExecute("
+			DELETE person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#'
 		", {}, { datasource: variables.dsn.local });
 	}
 
@@ -2583,7 +2613,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			SELECT COUNT(context_id) AS total
 			FROM context
 				INNER JOIN product on product = product_id
-			WHERE context_type IN ('Counselor')
+			WHERE context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
 				AND product.program = #variables.realProgram#
 				AND context.status = 'Active'
 				AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
@@ -2591,6 +2621,21 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		if (assigned.total != arguments.total)
 			throw(type="assertCandidatesAssigned", message="Expected: #arguments.total# Actual: #assigned.total#");
+	}
+
+	public void function assertSessionsAssigned(
+		required numeric person_id,
+		required array sessions
+	) {
+		var assigned = ValueArray(
+			getModel("fsyDAO").getAssignedSessionsForPerson(arguments.person_id, getModel("fsyDAO").getFSYYear().year),
+			"pm_session_id"
+		)
+
+		for (item in sessions) {
+			if (!assigned.contains(item))
+				Throw(type = "assertSessionsAssigned", message = "Expected: #arguments.sessions.ToList()# Actual: #assigned.ToList()#");
+		}
 	}
 
 	public void function assertCandidatesAssignedTraining(required numeric week, required numeric order) {
@@ -2727,6 +2772,22 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1])
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+	}
+
+	private void function testACHappyPath() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Assistant Coordinator", "UT")
+		createAvailability(local.hireContext, [variables.dates.core, variables.dates.week9], 1)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001521") // FSY OR Monmouth 02
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -3078,10 +3139,408 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.sessionsArray = ListToArray(local.sessions)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
-//		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
+		//		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
 
 		runScheduler()
 		assertCandidatesAssigned(2)
 	}
 
+	private void function testAlreadyAssignedOneAvailOneLinked2() hiringTest {
+		hiringSetup()
+
+		local.availableWeeks = [
+				variables.dates.week0,
+				variables.dates.week1,
+				variables.dates.week2,
+				variables.dates.week3
+		]
+		local.numWeeksAvailable = 1
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		local.sessions = '10001317,10001343'
+		local.sessionsArray = listToArray(local.sessions)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, local.sessions)
+		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
+
+		runScheduler()
+		assertCandidatesAssigned(0)
+	}
+
+	private void function testAlreadyAssignedTwoAvailOneLinked2() hiringTest {
+		hiringSetup()
+
+		local.availableWeeks = [
+				variables.dates.week0,
+				variables.dates.week1,
+				variables.dates.week2,
+				variables.dates.week3
+		]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		local.sessions = '10001317,10001343'
+		local.sessionsArray = listToArray(local.sessions)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, local.sessions)
+		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
+
+		runScheduler()
+		assertCandidatesAssigned(2)
+	}
+
+	private void function testResidenceUSAtoCAN() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson('M')
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, 'Counselor', 'UT')
+		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week9], 1)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, '10000796') // FSY BC Vancouver
+
+		runScheduler()
+		assertCandidatesAssigned(0)
+	}
+
+	private void function testResidenceCANtoUSA() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson('M')
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(
+				local.hireContext,
+				'Counselor',
+				'ON',
+				'CAN'
+		)
+		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week9], 1)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, '10001307') // FSY AZ Tempe 01
+
+		runScheduler()
+		assertCandidatesAssigned(0)
+	}
+
+	private void function testAvailable5ConsecutiveWeeksWork4Break() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson('M')
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, 'Counselor')
+		createAvailability(
+				local.hireContext,
+				[
+						variables.dates.week0,
+						variables.dates.week1,
+						variables.dates.week2,
+						variables.dates.week3,
+						variables.dates.week4,
+						variables.dates.week5
+				],
+				5
+		)
+		setSessionStaffNeeds(10)
+
+		runScheduler()
+		assertCandidatesAssigned(4)
+	}
+
+	private void function testAvailable6ConsecutiveWeeksWork5Break() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson('M')
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, 'Counselor')
+		createAvailability(
+				local.hireContext,
+				[
+						variables.dates.week0,
+						variables.dates.week1,
+						variables.dates.week2,
+						variables.dates.week3,
+						variables.dates.week4,
+						variables.dates.week5,
+						variables.dates.week6
+				],
+				6
+		)
+		setSessionStaffNeeds(10)
+
+		runScheduler()
+		assertCandidatesAssigned(5)
+	}
+
+	private void function testRespectPlaceTime() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson('M')
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, 'Counselor')
+		createAvailability(
+				local.hireContext,
+				[
+						variables.dates.week1,
+						variables.dates.week2,
+						variables.dates.week3,
+						variables.dates.week4,
+						variables.dates.week5,
+						variables.dates.week6
+				],
+				1
+		)
+		local.hiresAvailabilityObject = getModel('baseObject')
+				.setPrimaryKey('context', local.hireContext)
+				.load('Hires_Availability');
+		local.hiresAvailabilityObject.setValue('pm_location', 38);
+		local.hiresAvailabilityObject.setValue('start_date', '2024-06-09');
+		local.hiresAvailabilityObject.write();
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(2, '10001346')
+		setSessionStaffNeeds(1, '10001347')
+		runScheduler()
+		assertCandidatesAssigned(1)
+	}
+
+	private void function testCanWorkTravelLinkConsecutiveWeeks() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson('M')
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, 'Counselor')
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1, variables.dates.week2], 2)
+		local.sessions = '10001294,10001306' // AZ Prescott 01/02
+		local.sessionsArray = listToArray(local.sessions)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, local.sessions)
+		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
+
+
+		runScheduler()
+		assertCandidatesAssigned(2)
+	}
+
+	private void function testCanWork1TravelIn2ConsecutiveWeeksUnlinked() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson('M')
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, 'Counselor')
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1, variables.dates.week2], 2)
+		local.sessions = '10001294,10001306' // AZ Prescott 01/02
+		local.sessionsArray = listToArray(local.sessions)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, local.sessions)
+
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+	}
+
+	private void function testCanWorkUnlinkedNotTravelConsecutiveWeeks() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson('M')
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, 'Counselor')
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1, variables.dates.week2], 2)
+		local.sessions = '10001301,10001322' // Provo 01/02
+		local.sessionsArray = listToArray(local.sessions)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, local.sessions)
+
+
+		runScheduler()
+		assertCandidatesAssigned(2)
+	}
+
+	private void function testLinkedSessions_1Local_2TravelLinked() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.append({ program = local.program })
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id = local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 2)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001301")
+		setSessionStaffNeeds(1, "10001310")
+		setSessionStaffNeeds(1, "10001345")
+		linkSessions(10001310, 10001345)
+
+		runScheduler()
+		assertCandidatesAssigned(2)
+		assertSessionsAssigned(local.person_id, [ 10001310, 10001345 ])
+	}
+
+	private void function testLinkedSessions_1TravelLinked_1Local_1TravelLinked() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.append({ program = local.program })
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id = local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 2)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001299")
+		setSessionStaffNeeds(1, "10001322")
+		setSessionStaffNeeds(1, "10001345")
+		linkSessions(10001299, 10001345)
+
+		runScheduler()
+		assertCandidatesAssigned(2)
+		assertSessionsAssigned(local.person_id, [ 10001299, 10001345 ])
+	}
+
+	private void function testLinkedSessions_3Linked() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.append({ program = local.program })
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id = local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 3)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001299")
+		setSessionStaffNeeds(1, "10001310")
+		setSessionStaffNeeds(1, "10001345")
+		linkSessions(10001299, 10001310)
+		linkSessions(10001299, 10001345)
+
+		runScheduler()
+		assertCandidatesAssigned(3)
+		assertSessionsAssigned(local.person_id, [ 10001299, 10001310, 10001345 ])
+	}
+
+	private void function testLinkedSessions_2Linked_OnlyAvailable1Week() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.append({ program = local.program })
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id = local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1 ], 1)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001310")
+		setSessionStaffNeeds(1, "10001345")
+		linkSessions(10001310, 10001345)
+
+		runScheduler()
+		assertCandidatesAssigned(0)
+	}
+
+	private void function testPeakWeeks() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.append({ program = local.program })
+		local.person_id1 = createPerson("M")
+		local.person_id2 = createPerson("F")
+		application.progress.append({ person_id = local.person_id1 })
+		local.hireContext1 = createHireContext(local.person_id1, local.program)
+		application.progress.append({ hireContext = local.hireContext1 })
+		application.progress.append({ person_id = local.person_id2 })
+		local.hireContext2 = createHireContext(local.person_id2, local.program)
+		application.progress.append({ hireContext = local.hireContext2 })
+		createHiringInfo(local.hireContext1, "Counselor", "UT")
+		createHiringInfo(local.hireContext2, "Counselor", "UT")
+		createAvailability(local.hireContext1, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 3)
+		createAvailability(
+			local.hireContext2,
+			[ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4 ],
+			4
+		)
+
+		runScheduler()
+		assertSessionsAssigned(local.person_id1, [ 10001349 ])
+	}
+
+	private void function testCAFirst_only_CA() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.append({ program = local.program })
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id = local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week4 ], 1)
+		// CA week 4
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001359")
+
+		runScheduler()
+		assertCandidatesAssigned(0)
+	}
+
+	private void function testCAFirst_1Local_2CA() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.append({ program = local.program })
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id = local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week3, variables.dates.week4 ], 2)
+		// CA week 3, local week 3, CA week 4
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001335")
+		setSessionStaffNeeds(1, "10001350")
+		setSessionStaffNeeds(1, "10001359")
+
+		runScheduler()
+		assertCandidatesAssigned(2)
+		assertSessionsAssigned(local.person_id, [ 10001350, 10001359 ])
+	}
+
+	private void function testCAFirst_1CA_1LocalAlreadyAssigned() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.append({ program = local.program })
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id = local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week3, variables.dates.week4 ], 2)
+		createAssignment(local.person_id, 10001378, "Counselor")
+		// CA week 3, local week 4
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001335")
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+	}
 }
