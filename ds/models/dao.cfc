@@ -3245,8 +3245,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 		//with three sessions (one texas, two utah, one TX peak week, desirability is -1 and 0 in UT), gets assigned UT 0 desirability
 	}
 
-//+ask Eli about this one - 2 week 1 training in Utah	Timeframe
-
 	private void function testTwoAvailLocalAndTravelTimeframe() hiringTest {
 		//with three sessions (1 UT, 1 TX, 1 AZ with ), gets assigned 
 	}
@@ -3262,14 +3260,5 @@ component threadSafe extends="o3.internal.cfc.model" {
 	private void function testFourAvailTimeFrame() hiringTest {
 		//with available weeks 1, 3, 4, 5 and 6 sessions (UT, AZ, AK, UT, UT, ID lettered A B C D E F with time frames Wks 3, 1, 2, 4, 5, 1 respectively), gets assigned sessions A, B, D, and E
 	}
-
-
-
-
-
-
-//	private void function testOneAvail() hiringTest {
-//		//with three sessions (), gets assigned __
-//	}
 
 }
