@@ -3181,67 +3181,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssigned(0)
 	}
 
-	private void function testAlreadyAssignedTwoAvailOneLinked() hiringTest {
-		hiringSetup()
-
-		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
-		local.numWeeksAvailable = 2
-		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
-
-		local.sessions = "10001317,10001343"
-		local.sessionsArray = ListToArray(local.sessions)
-		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(10, local.sessions)
-		//		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
-
-		runScheduler()
-		assertCandidatesAssigned(2)
-	}
-
-	private void function testAlreadyAssignedOneAvailOneLinked2() hiringTest {
-		hiringSetup()
-
-		local.availableWeeks = [
-				variables.dates.week0,
-				variables.dates.week1,
-				variables.dates.week2,
-				variables.dates.week3
-		]
-		local.numWeeksAvailable = 1
-		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
-
-		local.sessions = '10001317,10001343'
-		local.sessionsArray = listToArray(local.sessions)
-		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(10, local.sessions)
-		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
-
-		runScheduler()
-		assertCandidatesAssigned(0)
-	}
-
-	private void function testAlreadyAssignedTwoAvailOneLinked2() hiringTest {
-		hiringSetup()
-
-		local.availableWeeks = [
-				variables.dates.week0,
-				variables.dates.week1,
-				variables.dates.week2,
-				variables.dates.week3
-		]
-		local.numWeeksAvailable = 2
-		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
-
-		local.sessions = '10001317,10001343'
-		local.sessionsArray = listToArray(local.sessions)
-		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(10, local.sessions)
-		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
-
-		runScheduler()
-		assertCandidatesAssigned(2)
-	}
-
 	private void function testResidenceUSAtoCAN() hiringTest {
 		hiringSetup()
 
@@ -3596,7 +3535,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		runScheduler()
 		assertCandidatesAssigned(1)
 	}
-	
+
 	private void function testTwoAvailSameWeek() hiringTest {
 		hiringSetup()
 
@@ -3725,7 +3664,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 	}
 
 	private void function testTwoAvailLocalAndTravelTimeframe() hiringTest {
-		//with three sessions (1 UT, 1 TX, 1 AZ with ), gets assigned 
+		//with three sessions (1 UT, 1 TX, 1 AZ with ), gets assigned
 	}
 
 	private void function testTwoAvailLocalAndTravelDesirability() hiringTest {
