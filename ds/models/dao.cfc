@@ -2656,6 +2656,26 @@ component threadSafe extends="o3.internal.cfc.model" {
 			throw(type="assertCandidatesAssignedTraining", message="Expected: week #arguments.week#, order #arguments.order#");
 	}
 
+	public void function assertCandidatesAssignedSpecificSessions(required string sessions) {
+		var assigned = queryExecute("
+			SELECT pm_session.pm_session_id
+			FROM context
+				INNER JOIN pm_session ON context.product = pm_session.product
+			WHERE context_type IN ('Counselor')
+				AND context.status = 'Active'
+				AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
+		", { sessions = { value = arguments.sessions, list = true } }, { datasource: variables.dsn.local });
+
+		local.dbSessions = ValueArray(assigned, "pm_session_id")
+		ArraySort(local.dbSessions, "numeric")
+		local.dbSessions = ListToArray(ArrayToList(local.dbSessions))
+		local.checkSessions = ListToArray(arguments.sessions)
+		ArraySort(local.checkSessions, "numeric")
+
+		if (!local.dbSessions.equals(local.checkSessions))
+			throw(type="assertCandidatesAssignedSpecificSessions", message="Expected: #SerializeJSON(local.checkSessions)# Actual: #SerializeJSON(local.dbSessions)#");
+	}
+
 	public any function runScheduler() {
 		local.users = getModel("fsyDAO").getAvailableHires(getModel("fsyDAO").getFSYYear().year);
 		local.scheduler = getModel("employmentSchedulerS");
@@ -2738,9 +2758,41 @@ component threadSafe extends="o3.internal.cfc.model" {
 		);
 	}
 
+	private void function setPeakWeeks(
+		required string sessions = ""
+	) {
+		QueryExecute("
+			update pm_session
+			set
+				peak_week = 'Y',
+				updated_by = :updated_by
+			where pm_session_id in (:sessions)
+			",
+			{ updated_by = variables.ticket, sessions = { value = arguments.sessions, list = true } },
+			{ datasource = variables.dsn.local }
+		);
+	}
+
+	private void function setDesirability(
+		required string sessions = "",
+		required numeric desirability
+	) {
+		QueryExecute("
+			update pm_session
+			set
+				desirability = :desirability,
+				updated_by = :updated_by
+			where pm_session_id in (:sessions)
+			",
+			{ desirability = arguments.desirability, updated_by = variables.ticket, sessions = { value = arguments.sessions, list = true } },
+			{ datasource = variables.dsn.local }
+		);
+	}
+
 	private struct function setupForScheduler(
 		required array availability,
-		required numeric numWeeksAvailable
+		required numeric numWeeksAvailable,
+		required string state = "UT"
 	) {
 		local.program = getProgram()
 		application.progress.append({ program: local.program })
@@ -2748,7 +2800,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ person_id: local.person_id })
 		local.hireContext = createHireContext(local.person_id, local.program)
 		application.progress.append({ hireContext: local.hireContext })
-		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createHiringInfo(local.hireContext, "Counselor", arguments.state)
 		createAvailability(local.hireContext, arguments.availability, arguments.numWeeksAvailable)
 
 		return { person_id = local.person_id };
@@ -2772,6 +2824,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1])
+		setSessionStaffNeeds(10)
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -3542,5 +3595,148 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		runScheduler()
 		assertCandidatesAssigned(1)
+	}
+	
+	private void function testTwoAvailSameWeek() hiringTest {
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		local.sessions = "10001301,10001302"
+		local.sessionsArray = ListToArray(local.sessions)
+		setSessionStaffNeeds(10, local.sessions, true)
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+	}
+
+	private void function testTwoAvailNotLinkedNotLocal() hiringTest {
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		local.sessions = "10001317,10001343"
+		local.sessionsArray = ListToArray(local.sessions)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, local.sessions)
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+	}
+
+	private void function testTwoAvailLocal() hiringTest {
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		local.sessions = "10001301,10001322"
+		local.sessionsArray = ListToArray(local.sessions)
+		setSessionStaffNeeds(10, local.sessions, true)
+
+		runScheduler()
+		assertCandidatesAssigned(2)
+	}
+
+	private void function testTwoAvailLinkedNotLocal() hiringTest {
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		local.sessions = "10001317,10001343"
+		local.sessionsArray = ListToArray(local.sessions)
+		setSessionStaffNeeds(10, local.sessions, true)
+		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
+
+		runScheduler()
+		assertCandidatesAssigned(2)
+	}
+
+	private void function testTwoAvailLinkedTXIsTXResident() hiringTest { //in this test, the linked sessions are TX and the counselor is a resident of TX: should be assigned 0
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable, "TX")
+
+		local.sessions = "10001317,10001343"
+		local.sessionsArray = ListToArray(local.sessions)
+		setSessionStaffNeeds(10, local.sessions, true)
+		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
+
+		runScheduler()
+		assertCandidatesAssigned(0)
+	}
+
+	private void function testOneAvailPeakWeek() hiringTest { //with three sessions (one a peak week), gets assigned the peak week
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.numWeeksAvailable = 1
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		local.sessions = "10001301,10001322"
+		setSessionStaffNeeds(10, local.sessions)
+		setPeakWeeks("10001322")
+
+		runScheduler()
+		assertCandidatesAssignedSpecificSessions("10001322")
+	}
+
+	private void function testOneAvailDesirability0() hiringTest {
+		//with three sessions (0, -1, 1), gets assigned desirability of 0
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.numWeeksAvailable = 1
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		local.sessions = "10001322,10001323,10001324"
+		setSessionStaffNeeds(10, local.sessions)
+		setDesirability("10001322", -1)
+		setDesirability("10001323", 0)
+		setDesirability("10001324", 1)
+
+		runScheduler()
+		assertCandidatesAssignedSpecificSessions("10001323")
+	}
+
+	private void function testOneAvailTimeframe() hiringTest {
+		//with three sessions (only one in the timeframe of availability), gets the one within the timeframe
+	}
+
+	private void function testTwoAvailLinkedTXIsTXResidentTrainingInTx() hiringTest {
+		//same as testTwoAvailLinkedTXIsTXResident but with training in TX
+	}
+
+	private void function testOneAvailTxResidentUtahTxPeakWeeks() hiringTest {
+		//with three sessions (one texas, two utah, one TX peak week and one UT peak week), gets assigned UT peak week
+	}
+
+	private void function testOneAvailTxResidentUtahTxPeakWeeksDesirability() hiringTest {
+		//with three sessions (one texas, two utah, one TX peak week, desirability is -1 and 0 in UT), gets assigned UT 0 desirability
+	}
+
+	private void function testTwoAvailLocalAndTravelTimeframe() hiringTest {
+		//with three sessions (1 UT, 1 TX, 1 AZ with ), gets assigned 
+	}
+
+	private void function testTwoAvailLocalAndTravelDesirability() hiringTest {
+		//with three sessions (1 UT, 1 TX, 1 AZ with desirabilities 1, 0, -1), gets assigned 1 and -1
+	}
+
+	private void function testTwoAvailLocalAndTravelPeakWeek() hiringTest {
+		//with three sessions (1 UT, 1 TX, 1 AZ with AZ having peak week), gets assigned UT and AZ
+	}
+
+	private void function testFourAvailTimeFrame() hiringTest {
+		//with available weeks 1, 3, 4, 5 and 6 sessions (UT, AZ, AK, UT, UT, ID lettered A B C D E F with time frames Wks 3, 1, 2, 4, 5, 1 respectively), gets assigned sessions A, B, D, and E
 	}
 }
