@@ -2636,6 +2636,11 @@ component threadSafe extends="o3.internal.cfc.model" {
 			if (!assigned.contains(item))
 				Throw(type = "assertSessionsAssigned", message = "Expected: #arguments.sessions.ToList()# Actual: #assigned.ToList()#");
 		}
+
+		for(item in assigned) {
+			if (!sessions.contains(item))
+				Throw(type = "assertSessionsAssigned", message = "Expected: #arguments.sessions.ToList()# Actual: #assigned.ToList()#");
+		}
 	}
 
 	public void function assertCandidatesAssignedTraining(required numeric week, required numeric order) {
@@ -3039,6 +3044,40 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		runScheduler()
 		assertCandidatesAssigned(1)
+	}
+
+	private void function testTravelBalanceHappyPath() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [
+			variables.dates.week0,
+			variables.dates.week1,
+			variables.dates.week2,
+			variables.dates.week3,
+			variables.dates.week4,
+			variables.dates.week5,
+			variables.dates.week6,
+			variables.dates.week7,
+			variables.dates.week8
+		], 4)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, 10001301) // Provo 01A
+		setSessionStaffNeeds(1, 10001322) // Provo 02A
+		setSessionStaffNeeds(1, 10001349) // Provo 03A
+		setSessionStaffNeeds(1, 10001378) // Provo 04A
+		setSessionStaffNeeds(1, 10001385) // AZ Thatcher 05
+		setSessionStaffNeeds(1, 10001433) // Provo 06A
+		setSessionStaffNeeds(1, 10001456) // MN St Joseph
+		setSessionStaffNeeds(1, 10001500) // Provo 08A
+
+		runScheduler()
+		assertCandidatesAssigned(4)
+		assertSessionsAssigned(local.person_id, [ 10001385,10001378,10001433,10001456 ])
 	}
 
 	private void function testBackToBack_Local_Travel() hiringTest {
