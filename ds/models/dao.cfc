@@ -2846,8 +2846,8 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		createHiringInfo(local.hireContext, "Assistant Coordinator", "UT")
 		createAvailability(local.hireContext, [variables.dates.core, variables.dates.week9], 1)
-		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001521") // FSY OR Monmouth 02
+		setSessionStaffNeeds(0, "", "ac")
+		setSessionStaffNeeds(1, "10001521", "ac") // FSY OR Monmouth 02
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -3758,7 +3758,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 	private void function testDesirabilityPositiveThreeOptions() hiringTest { //with three sessions (0, -1, 1), gets assigned desirability of -1
 		hiringSetup()
 
-		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2]
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4]
 		local.numWeeksAvailable = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
 		createAssignment(local.return.person_id, 10001301, "Counselor") // week 1
@@ -3868,7 +3868,8 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.person_id = createPerson("M")
 		local.hireContext = createHireContext(local.person_id, local.program)
 		createHiringInfo(local.hireContext, "Coordinator", "UT")
-		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1])
+		createAvailability(local.hireContext, [variables.dates.core, variables.dates.week1])
+		setSessionStaffNeeds(1, "", "cd")
 
 		runScheduler()
 		assertCandidatesAssigned(1, "Coordinator")
