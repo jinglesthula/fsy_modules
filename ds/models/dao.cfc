@@ -3185,6 +3185,22 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssigned(1)
 	}
 
+	private void function testTrainingAlreadyAssignedAC() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Assistant Coordinator", "UT")
+		createAvailability(local.hireContext, [variables.dates.core, variables.dates.week1])
+		createTraining(local.person_id, 10041954);
+		setSessionStaffNeeds(10)
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+	}
+
 	private void function testBackToBack_Local_Travel() hiringTest {
 		hiringSetup()
 
