@@ -2704,6 +2704,33 @@ component threadSafe extends="o3.internal.cfc.model" {
 		", arguments, { datasource: variables.dsn.local })
 	}
 
+	public void function createTraining(
+		required numeric person_id,
+		required numeric pm_session_id,
+		string created_by = "FSY-1511"
+	) {
+		queryExecute("
+			insert into context (person, product, context_type, status, created_by)
+			values (:person_id, (select product from pm_session where pm_session_id = :pm_session_id), 'Enrollment', 'Active', :created_by)
+		", arguments, { datasource: variables.dsn.local, result = "local.section" })
+
+		arguments.context_id = local.section.generatedKey
+
+		queryExecute("
+			declare @section numeric(8) = (select product from pm_session where pm_session_id = :pm_session_id);
+			declare @gender varchar (32) = (select case when gender = 'F' then 'Female' else 'Male' end from person where person_id = :person_id);
+
+			insert into context (person, product, choice_for, context_type, status, created_by)
+			values (:person_id, (
+				select item
+				from option_item oi
+					inner join product housing on housing.product_id = oi.item and housing.option_type = 'Housing'
+				where oi.section = @section
+					and @gender = housing.housing_type
+			), :context_id, 'Enrollment', 'Active', :created_by)
+		", arguments, { datasource: variables.dsn.local, result = "local.section" })
+	}
+
 	public void function linkSessions(
 		required numeric base_session,
 		required numeric linked_session,
@@ -3140,6 +3167,22 @@ component threadSafe extends="o3.internal.cfc.model" {
 		runScheduler()
 		assertCandidatesAssigned(4)
 		assertSessionsAssigned(local.person_id, [ 10001385,10001378,10001349,10001301 ])
+	}
+
+	private void function testTrainingAlreadyAssignedCN() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1])
+		createTraining(local.person_id, 10041956);
+		setSessionStaffNeeds(10)
+
+		runScheduler()
+		assertCandidatesAssigned(1)
 	}
 
 	private void function testBackToBack_Local_Travel() hiringTest {
@@ -3803,25 +3846,27 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssignedSpecificSessions("10001301,10001349,10001378,10001324")
 	}
 
-	//we are not going to worry about this one; it is a corner case and half the time, it'll be fixed on the next week assigned them
-//	private void function testOneAvailDesirabilityNeutralTwoOptions() hiringTest { //with two sessions (-1, 1), gets assigned desirability of ????
-//		hiringSetup()
-//
-//		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2]
-//		local.numWeeksAvailable = 1
-//		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
-//
-//		setDesirability("10001304", 0)
-//		createAssignment(local.return.person_id, 10001304, "Counselor")
-//		local.sessions = "10001322,10001324"
-//		setSessionStaffNeeds(0)
-//		setSessionStaffNeeds(10, local.sessions)
-//		setDesirability("10001322", -1)
-//		setDesirability("10001324", 1)
-//
-//		runScheduler()
-//		assertCandidatesAssignedSpecificSessions("10001304,10001323")
-//	}
+	/*
+		// we are not going to worry about this one; it is a corner case and half the time, it'll be fixed on the next week assigned them
+		private void function testOneAvailDesirabilityNeutralTwoOptions() hiringTest { //with two sessions (-1, 1), gets assigned desirability of ????
+			hiringSetup()
+
+			local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2]
+			local.numWeeksAvailable = 1
+			local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+			setDesirability("10001304", 0)
+			createAssignment(local.return.person_id, 10001304, "Counselor")
+			local.sessions = "10001322,10001324"
+			setSessionStaffNeeds(0)
+			setSessionStaffNeeds(10, local.sessions)
+			setDesirability("10001322", -1)
+			setDesirability("10001324", 1)
+
+			runScheduler()
+			assertCandidatesAssignedSpecificSessions("10001304,10001323")
+		}
+	*/
 
 	private void function testDesirabilityPositiveTwoOptions() hiringTest { //with two sessions (0, 1), gets assigned desirability of 0
 		hiringSetup()
