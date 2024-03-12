@@ -2472,7 +2472,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		}
 		catch (any e) {
 			if (local.hiringTest)
-				return { pass: false, message: e.message, type: e.type, error: e, progress: application.progress }
+				return { pass: false, message: e.message, type: e.type, error: e, progress: application.progress, testName: arguments.missingMethodName }
 
 			rethrow;
 		}
@@ -3725,7 +3725,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssignedSpecificSessions("10001322")
 	}
 
-	private void function testOneAvailDesirabilityNeutralThreeOptions() hiringTest { //with three sessions (0, -1, 1), gets assigned desirability of 0
+	private void function testDesirabilityNeutralThreeOptions() hiringTest { //with three sessions (0, -1, 1), gets assigned desirability of 0
 		hiringSetup()
 
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4]
@@ -3749,15 +3749,19 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssignedSpecificSessions("10001301,10001349,10001378,10001323")
 	}
 
-	private void function testTwoAvailDesirabilityPositiveThreeOptions() hiringTest { //with three sessions (0, -1, 1), gets assigned desirability of -1
+	private void function testDesirabilityPositiveThreeOptions() hiringTest { //with three sessions (0, -1, 1), gets assigned desirability of -1
 		hiringSetup()
 
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2]
-		local.numWeeksAvailable = 2
+		local.numWeeksAvailable = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+		createAssignment(local.return.person_id, 10001301, "Counselor") // week 1
+		createAssignment(local.return.person_id, 10001349, "Counselor") // week 3
+		createAssignment(local.return.person_id, 10001378, "Counselor") // week 4
+		setDesirability("10001301", 0)
+		setDesirability("10001349", 0)
+		setDesirability("10001378", 1)
 
-		setDesirability("10001304", 1)
-		createAssignment(local.return.person_id, 10001304, "Counselor")
 		local.sessions = "10001322,10001323,10001324"
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
@@ -3766,18 +3770,22 @@ component threadSafe extends="o3.internal.cfc.model" {
 		setDesirability("10001324", 1)
 
 		runScheduler()
-		assertCandidatesAssignedSpecificSessions("10001304,10001322")
+		assertCandidatesAssignedSpecificSessions("10001301,10001349,10001378,10001322")
 	}
 
-	private void function testTwoAvailDesirabilityNegativeThreeOptions() hiringTest { //with three sessions (0, -1, 1), gets assigned desirability of 1
+	private void function testDesirabilityNegativeThreeOptions() hiringTest { //with three sessions (0, -1, 1), gets assigned desirability of 1
 		hiringSetup()
 
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2]
-		local.numWeeksAvailable = 2
+		local.numWeeksAvailable = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+		createAssignment(local.return.person_id, 10001301, "Counselor") // week 1
+		createAssignment(local.return.person_id, 10001349, "Counselor") // week 3
+		createAssignment(local.return.person_id, 10001378, "Counselor") // week 4
+		setDesirability("10001301", 0)
+		setDesirability("10001349", 0)
+		setDesirability("10001378", -1)
 
-		setDesirability("10001304", -1)
-		createAssignment(local.return.person_id, 10001304, "Counselor")
 		local.sessions = "10001322,10001323,10001324"
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
@@ -3786,7 +3794,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		setDesirability("10001324", 1)
 
 		runScheduler()
-		assertCandidatesAssignedSpecificSessions("10001304,10001324")
+		assertCandidatesAssignedSpecificSessions("10001301,10001349,10001378,10001324")
 	}
 
 	//we are not going to worry about this one; it is a corner case and half the time, it'll be fixed on the next week assigned them
@@ -3809,7 +3817,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 //		assertCandidatesAssignedSpecificSessions("10001304,10001323")
 //	}
 
-	private void function testTwoAvailDesirabilityPositiveTwoOptions() hiringTest { //with two sessions (0, 1), gets assigned desirability of 0
+	private void function testDesirabilityPositiveTwoOptions() hiringTest { //with two sessions (0, 1), gets assigned desirability of 0
 		hiringSetup()
 
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2]
@@ -3828,7 +3836,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssignedSpecificSessions("10001304,10001323")
 	}
 
-	private void function testTwoAvailDesirabilityNegativeTwoOptions() hiringTest { //with two sessions (0, -1), gets assigned desirability of 1
+	private void function testDesirabilityNegativeTwoOptions() hiringTest { //with two sessions (0, -1), gets assigned desirability of 1
 		hiringSetup()
 
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2]
@@ -3860,36 +3868,12 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssigned(1, "Coordinator")
 	}
 
-	private void function testOneAvailTimeframe() hiringTest {
-		//with three sessions (only one in the timeframe of availability), gets the one within the timeframe
-	}
-
-	private void function testTwoAvailLinkedTXIsTXResidentTrainingInTx() hiringTest {
-		//same as testTwoAvailLinkedTXIsTXResident but with training in TX
-	}
-
-	private void function testOneAvailTxResidentUtahTxPeakWeeks() hiringTest {
-		//with three sessions (one texas, two utah, one TX peak week and one UT peak week), gets assigned UT peak week
-	}
-
 	private void function testOneAvailTxResidentUtahTxPeakWeeksDesirability() hiringTest {
 		//with three sessions (one texas, two utah, one TX peak week, desirability is -1 and 0 in UT), gets assigned UT 0 desirability
 	}
 
-	private void function testTwoAvailLocalAndTravelTimeframe() hiringTest {
-		//with three sessions (1 UT, 1 TX, 1 AZ with ), gets assigned
-	}
-
-	private void function testTwoAvailLocalAndTravelDesirability() hiringTest {
-		//with three sessions (1 UT, 1 TX, 1 AZ with desirabilities 1, 0, -1), gets assigned 1 and -1
-	}
-
 	private void function testTwoAvailLocalAndTravelPeakWeek() hiringTest {
 		//with three sessions (1 UT, 1 TX, 1 AZ with AZ having peak week), gets assigned UT and AZ
-	}
-
-	private void function testFourAvailTimeFrame() hiringTest {
-		//with available weeks 1, 3, 4, 5 and 6 sessions (UT, AZ, AK, UT, UT, ID lettered A B C D E F with time frames Wks 3, 1, 2, 4, 5, 1 respectively), gets assigned sessions A, B, D, and E
 	}
 
 }
