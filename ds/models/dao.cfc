@@ -2767,6 +2767,8 @@ component threadSafe extends="o3.internal.cfc.model" {
 		required string sessions = ""
 	) {
 		QueryExecute("
+			update pm_session set peak_week = 'N', updated_by = :updated_by; -- clean slate
+
 			update pm_session
 			set
 				peak_week = 'Y',
@@ -3555,25 +3557,20 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		local.program = getProgram()
 		application.progress.append({ program = local.program })
-		local.person_id1 = createPerson("M")
-		local.person_id2 = createPerson("F")
-		application.progress.append({ person_id = local.person_id1 })
-		local.hireContext1 = createHireContext(local.person_id1, local.program)
-		application.progress.append({ hireContext = local.hireContext1 })
-		application.progress.append({ person_id = local.person_id2 })
-		local.hireContext2 = createHireContext(local.person_id2, local.program)
-		application.progress.append({ hireContext = local.hireContext2 })
-		createHiringInfo(local.hireContext1, "Counselor", "UT")
-		createHiringInfo(local.hireContext2, "Counselor", "UT")
-		createAvailability(local.hireContext1, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 3)
-		createAvailability(
-			local.hireContext2,
-			[ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4 ],
-			4
-		)
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id = local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week2, variables.dates.week3 ], 1)
+		setPeakWeeks(10001349)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001322")
+		setSessionStaffNeeds(1, "10001349") // marked as peak week
 
 		runScheduler()
-		assertSessionsAssigned(local.person_id1, [ 10001349 ])
+		assertCandidatesAssigned(1)
+		assertSessionsAssigned(local.person_id, [ 10001349 ])
 	}
 
 	private void function testCAFirst_only_CA() hiringTest {
@@ -3646,6 +3643,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		local.sessions = "10001301,10001302"
 		local.sessionsArray = ListToArray(local.sessions)
+		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
 
 		runScheduler()
