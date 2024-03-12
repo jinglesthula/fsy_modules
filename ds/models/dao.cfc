@@ -3631,11 +3631,10 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssignedSpecificSessions("10001322")
 	}
 
-	private void function testOneAvailDesirability0() hiringTest {
-		//with three sessions (0, -1, 1), gets assigned desirability of 0
+	private void function testOneAvailDesirabilityNeutralThreeOptions() hiringTest { //with three sessions (0, -1, 1), gets assigned desirability of 0
 		hiringSetup()
 
-		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2]
 		local.numWeeksAvailable = 1
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
 
@@ -3650,11 +3649,30 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssignedSpecificSessions("10001323")
 	}
 
-	private void function testTwoAvailDesirabilityPositive() hiringTest {
-		//with three sessions (0, -1, 1), gets assigned desirability of 0
+	private void function testTwoAvailDesirabilityPositiveThreeOptions() hiringTest { //with three sessions (0, -1, 1), gets assigned desirability of -1
 		hiringSetup()
 
-		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		setDesirability("10001304", 1)
+		createAssignment(local.return.person_id, 10001304, "Counselor")
+		local.sessions = "10001322,10001323,10001324"
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, local.sessions)
+		setDesirability("10001322", -1)
+		setDesirability("10001323", 0)
+		setDesirability("10001324", 1)
+
+		runScheduler()
+		assertCandidatesAssignedSpecificSessions("10001304,10001322")
+	}
+
+	private void function testTwoAvailDesirabilityNegativeThreeOptions() hiringTest { //with three sessions (0, -1, 1), gets assigned desirability of 1
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2]
 		local.numWeeksAvailable = 2
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
 
@@ -3669,6 +3687,63 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		runScheduler()
 		assertCandidatesAssignedSpecificSessions("10001304,10001324")
+	}
+
+	private void function testOneAvailDesirabilityNeutralTwoOptions() hiringTest { //with three sessions (-1, 1), gets assigned desirability of ????
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2]
+		local.numWeeksAvailable = 1
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		setDesirability("10001304", 0)
+		createAssignment(local.return.person_id, 10001304, "Counselor")
+		local.sessions = "10001322,10001324"
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, local.sessions)
+		setDesirability("10001322", -1)
+		setDesirability("10001324", 1)
+
+		runScheduler()
+		assertCandidatesAssignedSpecificSessions("10001304,10001323")
+	}
+
+	private void function testTwoAvailDesirabilityPositiveTwoOptions() hiringTest { //with three sessions (0, 1), gets assigned desirability of 0
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		setDesirability("10001304", 1)
+		createAssignment(local.return.person_id, 10001304, "Counselor")
+		local.sessions = "10001323,10001324"
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, local.sessions)
+		setDesirability("10001323", 0)
+		setDesirability("10001324", 1)
+
+		runScheduler()
+		assertCandidatesAssignedSpecificSessions("10001304,10001323")
+	}
+
+	private void function testTwoAvailDesirabilityNegativeTwoOptions() hiringTest { //with three sessions (0, -1, 1), gets assigned desirability of 1
+		hiringSetup()
+
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2]
+		local.numWeeksAvailable = 2
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksAvailable)
+
+		setDesirability("10001304", -1)
+		createAssignment(local.return.person_id, 10001304, "Counselor")
+		local.sessions = "10001322,10001323"
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, local.sessions)
+		setDesirability("10001322", -1)
+		setDesirability("10001323", 0)
+
+		runScheduler()
+		assertCandidatesAssignedSpecificSessions("10001304,10001323")
 	}
 
 	private void function testCoordinator() hiringTest {
