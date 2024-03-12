@@ -3324,8 +3324,11 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		// one person to assign
 		local.program = getProgram()
+		application.progress.append({ program = local.program })
 		local.person_id = createPerson('M')
+		application.progress.append({ person_id = local.person_id })
 		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
 		createHiringInfo(local.hireContext, 'Counselor')
 		createAvailability(
 				local.hireContext,
@@ -3351,8 +3354,11 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		// one person to assign
 		local.program = getProgram()
+		application.progress.append({ program = local.program })
 		local.person_id = createPerson('M')
+		application.progress.append({ person_id = local.person_id })
 		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
 		createHiringInfo(local.hireContext, 'Counselor')
 		createAvailability(
 				local.hireContext,
