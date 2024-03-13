@@ -2955,7 +2955,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		application.progress.hireContext = local.hireContext
 		createHiringInfo(local.hireContext, "Counselor", "AB", "CAN")
-		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week8, variables.dates.week9], 2)
+		createAvailability(local.hireContext, [variables.dates.week6, variables.dates.week8, variables.dates.week9], 2)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001473,10001506")
 
