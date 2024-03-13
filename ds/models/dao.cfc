@@ -3216,7 +3216,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 2)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001322")
-		setSessionStaffNeeds(1, "10001345")
+		setSessionStaffNeeds(1, "10001355")
 
 		runScheduler()
 		assertCandidatesAssigned(2)
@@ -3236,7 +3236,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		// travel week 2, travel week 3
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001310")
-		setSessionStaffNeeds(1, "10001345")
+		setSessionStaffNeeds(1, "10001355")
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -3254,7 +3254,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
 		createAssignment(local.person_id, 10001322, "Counselor")
-		createAssignment(local.person_id, 10001345, "Counselor")
+		createAssignment(local.person_id, 10001355, "Counselor")
 		// local week 2, travel week 3, travel week 4
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001359")
@@ -3274,7 +3274,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ hireContext = local.hireContext })
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
-		createAssignment(local.person_id, 10001345, "Counselor")
+		createAssignment(local.person_id, 10001355, "Counselor")
 		createAssignment(local.person_id, 10001378, "Counselor")
 		// travel week 2, travel week 3, local week 4
 		setSessionStaffNeeds(0)
@@ -3545,12 +3545,12 @@ component threadSafe extends="o3.internal.cfc.model" {
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001301")
 		setSessionStaffNeeds(1, "10001310")
-		setSessionStaffNeeds(1, "10001345")
-		linkSessions(10001310, 10001345)
+		setSessionStaffNeeds(1, "10001355")
+		linkSessions(10001310, 10001355)
 
 		runScheduler()
 		assertCandidatesAssigned(2)
-		assertSessionsAssigned(local.person_id, [ 10001310, 10001345 ])
+		assertSessionsAssigned(local.person_id, [ 10001310, 10001355 ])
 	}
 
 	private void function testLinkedSessions_1TravelLinked_1Local_1TravelLinked() hiringTest {
@@ -3567,12 +3567,12 @@ component threadSafe extends="o3.internal.cfc.model" {
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001299")
 		setSessionStaffNeeds(1, "10001322")
-		setSessionStaffNeeds(1, "10001345")
-		linkSessions(10001299, 10001345)
+		setSessionStaffNeeds(1, "10001355")
+		linkSessions(10001299, 10001355)
 
 		runScheduler()
 		assertCandidatesAssigned(2)
-		assertSessionsAssigned(local.person_id, [ 10001299, 10001345 ])
+		assertSessionsAssigned(local.person_id, [ 10001299, 10001355 ])
 	}
 
 	private void function testLinkedSessions_3Linked() hiringTest {
@@ -3589,13 +3589,13 @@ component threadSafe extends="o3.internal.cfc.model" {
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001299")
 		setSessionStaffNeeds(1, "10001310")
-		setSessionStaffNeeds(1, "10001345")
+		setSessionStaffNeeds(1, "10001355")
 		linkSessions(10001299, 10001310)
-		linkSessions(10001299, 10001345)
+		linkSessions(10001299, 10001355)
 
 		runScheduler()
 		assertCandidatesAssigned(3)
-		assertSessionsAssigned(local.person_id, [ 10001299, 10001310, 10001345 ])
+		assertSessionsAssigned(local.person_id, [ 10001299, 10001310, 10001355 ])
 	}
 
 	private void function testLinkedSessions_2Linked_OnlyAvailable1Week() hiringTest {
@@ -3611,8 +3611,8 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1 ], 1)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001310")
-		setSessionStaffNeeds(1, "10001345")
-		linkSessions(10001310, 10001345)
+		setSessionStaffNeeds(1, "10001355")
+		linkSessions(10001310, 10001355)
 
 		runScheduler()
 		assertCandidatesAssigned(0)
