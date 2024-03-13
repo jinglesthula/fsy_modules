@@ -2880,6 +2880,38 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssigned(1)
 	}
 
+	private void function testTrainingAlreadyAssignedCN() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1])
+		createTraining(local.person_id, 10001585);
+		setSessionStaffNeeds(10)
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+	}
+
+	private void function testTrainingAlreadyAssignedAC() hiringTest {
+		hiringSetup()
+
+		// one person to assign
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		createHiringInfo(local.hireContext, "Assistant Coordinator", "UT")
+		createAvailability(local.hireContext, [variables.dates.core, variables.dates.week1])
+		createTraining(local.person_id, 10001584);
+		setSessionStaffNeeds(10)
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+	}
+
 	private void function testAlreadyAssignedOneLinkedSession() hiringTest {
 		hiringSetup()
 
@@ -2978,6 +3010,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssignedTraining(22, 2)
 	}
 
+	// 11
 	private void function testTrainingClosestToFirstSession() hiringTest {
 		hiringSetup()
 
@@ -3141,6 +3174,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertSessionsAssigned(local.person_id, [ 10001385,10001378,10001433,10001456 ])
 	}
 
+	// 21
 	private void function testTravelUnbalancedButAssigned() hiringTest {
 		hiringSetup()
 
@@ -3167,38 +3201,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 		runScheduler()
 		assertCandidatesAssigned(4)
 		assertSessionsAssigned(local.person_id, [ 10001385,10001378,10001349,10001301 ])
-	}
-
-	private void function testTrainingAlreadyAssignedCN() hiringTest {
-		hiringSetup()
-
-		// one person to assign
-		local.program = getProgram()
-		local.person_id = createPerson("M")
-		local.hireContext = createHireContext(local.person_id, local.program)
-		createHiringInfo(local.hireContext, "Counselor", "UT")
-		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1])
-		createTraining(local.person_id, 10041956);
-		setSessionStaffNeeds(10)
-
-		runScheduler()
-		assertCandidatesAssigned(1)
-	}
-
-	private void function testTrainingAlreadyAssignedAC() hiringTest {
-		hiringSetup()
-
-		// one person to assign
-		local.program = getProgram()
-		local.person_id = createPerson("M")
-		local.hireContext = createHireContext(local.person_id, local.program)
-		createHiringInfo(local.hireContext, "Assistant Coordinator", "UT")
-		createAvailability(local.hireContext, [variables.dates.core, variables.dates.week1])
-		createTraining(local.person_id, 10041954);
-		setSessionStaffNeeds(10)
-
-		runScheduler()
-		assertCandidatesAssigned(1)
 	}
 
 	private void function testBackToBack_Local_Travel() hiringTest {
@@ -3378,6 +3380,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssigned(0)
 	}
 
+	// 31
 	private void function testAvailable6ConsecutiveWeeksWork5Break() hiringTest {
 		hiringSetup()
 
@@ -3560,7 +3563,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		application.progress.append({ hireContext = local.hireContext })
 		createHiringInfo(local.hireContext, "Counselor", "UT")
-		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 2)
+		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 4)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001299")
 		setSessionStaffNeeds(1, "10001322")
@@ -3615,6 +3618,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssigned(0)
 	}
 
+	// 41
 	private void function testPeakWeeks() hiringTest {
 		hiringSetup()
 
@@ -3790,6 +3794,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssignedSpecificSessions("10001322")
 	}
 
+	// 51
 	private void function testDesirabilityNeutralThreeOptions() hiringTest { //with three sessions (0, -1, 1), gets assigned desirability of 0
 		hiringSetup()
 
