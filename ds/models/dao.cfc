@@ -3216,7 +3216,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 2)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001322")
-		setSessionStaffNeeds(1, "10001355")
+		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
 
 		runScheduler()
 		assertCandidatesAssigned(2)
@@ -3236,7 +3236,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		// travel week 2, travel week 3
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001310")
-		setSessionStaffNeeds(1, "10001355")
+		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -3254,7 +3254,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
 		createAssignment(local.person_id, 10001322, "Counselor")
-		createAssignment(local.person_id, 10001355, "Counselor")
+		createAssignment(local.person_id, 10001355, "Counselor") //FSY VA Buena Vista 01 - 2024-06-09 - week3
 		// local week 2, travel week 3, travel week 4
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001359")
@@ -3274,7 +3274,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ hireContext = local.hireContext })
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
-		createAssignment(local.person_id, 10001355, "Counselor")
+		createAssignment(local.person_id, 10001355, "Counselor") //FSY VA Buena Vista 01 - 2024-06-09 - week3
 		createAssignment(local.person_id, 10001378, "Counselor")
 		// travel week 2, travel week 3, local week 4
 		setSessionStaffNeeds(0)
@@ -3545,7 +3545,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001301")
 		setSessionStaffNeeds(1, "10001310")
-		setSessionStaffNeeds(1, "10001355")
+		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
 		linkSessions(10001310, 10001355)
 
 		runScheduler()
@@ -3553,7 +3553,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertSessionsAssigned(local.person_id, [ 10001310, 10001355 ])
 	}
 
-	private void function testLinkedSessions_1TravelLinked_1Local_1TravelLinked() hiringTest {
+	private void function testLinkedSessions_3Travel2Linked_WillWork4_available3() hiringTest {
 		hiringSetup()
 
 		local.program = getProgram()
@@ -3562,17 +3562,73 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ person_id = local.person_id })
 		local.hireContext = createHireContext(local.person_id, local.program)
 		application.progress.append({ hireContext = local.hireContext })
+
+		local.numWeeksWillWork = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
+		createAssignment(local.person_id, 10001301, "Counselor") // week 1
+
 		createHiringInfo(local.hireContext, "Counselor", "UT")
-		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 4)
+		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 , variables.dates.week4], local.numWeeksWillWork)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001299")
-		setSessionStaffNeeds(1, "10001322")
-		setSessionStaffNeeds(1, "10001355")
-		linkSessions(10001299, 10001355)
+		setSessionStaffNeeds(1, "10001359") //FSY CA Rohnert Park 02 - 2024-06-02 - week2
+		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
+		setSessionStaffNeeds(1, "10001383") //FSY VA Buena Vista 02 - 2024-06-16 - week4
+		linkSessions(10001355, 10001383)
 
 		runScheduler()
-		assertCandidatesAssigned(2)
-		assertSessionsAssigned(local.person_id, [ 10001299, 10001355 ])
+		assertSessionsAssigned(local.person_id, [ 10001301, 10001383, 10001355 ])
+	}
+
+	private void function testLinkedSessions_3Travel2Linked_WillWork4_available2() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.append({ program = local.program })
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id = local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
+
+		local.numWeeksWillWork = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
+		createAssignment(local.person_id, 10001301, "Counselor") // week 1
+		createAssignment(local.person_id, 10001410, "Counselor") // week 5
+
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 , variables.dates.week4, variables.dates.week5], local.numWeeksWillWork)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001359") //FSY CA Rohnert Park 02 - 2024-06-02 - week2
+		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
+		setSessionStaffNeeds(1, "10001383") //FSY VA Buena Vista 02 - 2024-06-16 - week4
+		linkSessions(10001355, 10001383)
+
+		runScheduler()
+		assertSessionsAssigned(local.person_id, [ 10001301, 10001410, 10001383, 10001355 ])
+	}
+
+	private void function testLinkedSessions_3Travel2Linked_WillWork4_available1() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		application.progress.append({ program = local.program })
+		local.person_id = createPerson("M")
+		application.progress.append({ person_id = local.person_id })
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.append({ hireContext = local.hireContext })
+
+		local.numWeeksWillWork = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
+		createAssignment(local.person_id, 10001301, "Counselor") // week 1
+		createAssignment(local.person_id, 10001410, "Counselor") // week 5
+		createAssignment(local.person_id, 10001432, "Counselor") // week 6
+
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 , variables.dates.week4, variables.dates.week5, variables.dates.week6], local.numWeeksWillWork)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(1, "10001359") //FSY CA Rohnert Park 02 - 2024-06-02 - week2
+		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
+		setSessionStaffNeeds(1, "10001383") //FSY VA Buena Vista 02 - 2024-06-16 - week4
+		linkSessions(10001355, 10001383)
+
+		runScheduler()
+		assertSessionsAssigned(local.person_id, [ 10001301, 10001410, 10001432, 10001359 ])
 	}
 
 	private void function testLinkedSessions_3Linked() hiringTest {
@@ -3587,15 +3643,15 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 3)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001299")
 		setSessionStaffNeeds(1, "10001310")
-		setSessionStaffNeeds(1, "10001355")
-		linkSessions(10001299, 10001310)
-		linkSessions(10001299, 10001355)
+		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
+		setSessionStaffNeeds(1, "10001383") //FSY VA Buena Vista 02 - 2024-06-16 - week4
+		linkSessions(10001383, 10001310)
+		linkSessions(10001383, 10001355)
 
 		runScheduler()
 		assertCandidatesAssigned(3)
-		assertSessionsAssigned(local.person_id, [ 10001299, 10001310, 10001355 ])
+		assertSessionsAssigned(local.person_id, [ 10001383, 10001310, 10001355 ])
 	}
 
 	private void function testLinkedSessions_2Linked_OnlyAvailable1Week() hiringTest {
@@ -3611,7 +3667,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1 ], 1)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001310")
-		setSessionStaffNeeds(1, "10001355")
+		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
 		linkSessions(10001310, 10001355)
 
 		runScheduler()
