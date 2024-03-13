@@ -3764,7 +3764,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.numWeeksWillWork = 2
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork, "MA")
 
-		local.sessions = "10001488,10001516"
+		local.sessions = "10001488,10001516" //FSY MA Amherst 01 & FSY MA Amherst 02
 		local.sessionsArray = ListToArray(local.sessions)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
