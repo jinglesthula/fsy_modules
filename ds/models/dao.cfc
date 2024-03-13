@@ -3757,14 +3757,14 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssigned(2)
 	}
 
-	private void function testTwoAvailLinkedTXIsTXResident() hiringTest { //in this test, the linked sessions are TX and the counselor is a resident of TX: should be assigned 0
+	private void function testTwoAvailLinkedMAIsMAResident() hiringTest { //in this test, the linked sessions are MA and the counselor is a resident of MA: should be assigned 0
 		hiringSetup()
 
-		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3]
+		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week8, variables.dates.week9]
 		local.numWeeksWillWork = 2
-		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork, "TX")
+		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork, "MA")
 
-		local.sessions = "10001317,10001343"
+		local.sessions = "10001488,10001516" //FSY MA Amherst 01 & FSY MA Amherst 02
 		local.sessionsArray = ListToArray(local.sessions)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
