@@ -3641,7 +3641,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		application.progress.append({ hireContext = local.hireContext })
 		createHiringInfo(local.hireContext, "Counselor", "UT")
-		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 3)
+		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001310")
 		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
