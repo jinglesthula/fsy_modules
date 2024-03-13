@@ -4081,13 +4081,4 @@ component threadSafe extends="o3.internal.cfc.model" {
 		runScheduler()
 		assertCandidatesAssignedSpecificSessions("10001301,10001349,10001378,10001434")
 	}
-
-	private void function testOneAvailTxResidentUtahTxPeakWeeksDesirability() hiringTest {
-		//with three sessions (one texas, two utah, one TX peak week, desirability is -1 and 0 in UT), gets assigned UT 0 desirability
-	}
-
-	private void function testTwoAvailLocalAndTravelPeakWeek() hiringTest {
-		//with three sessions (1 UT, 1 TX, 1 AZ with AZ having peak week), gets assigned UT and AZ
-	}
-
 }
