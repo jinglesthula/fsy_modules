@@ -3641,7 +3641,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		application.progress.append({ hireContext = local.hireContext })
 		createHiringInfo(local.hireContext, "Counselor", "UT")
-		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 3)
+		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(1, "10001310")
 		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
@@ -4081,13 +4081,4 @@ component threadSafe extends="o3.internal.cfc.model" {
 		runScheduler()
 		assertCandidatesAssignedSpecificSessions("10001301,10001349,10001378,10001434")
 	}
-
-	private void function testOneAvailTxResidentUtahTxPeakWeeksDesirability() hiringTest {
-		//with three sessions (one texas, two utah, one TX peak week, desirability is -1 and 0 in UT), gets assigned UT 0 desirability
-	}
-
-	private void function testTwoAvailLocalAndTravelPeakWeek() hiringTest {
-		//with three sessions (1 UT, 1 TX, 1 AZ with AZ having peak week), gets assigned UT and AZ
-	}
-
 }
