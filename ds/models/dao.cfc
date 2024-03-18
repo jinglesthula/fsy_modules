@@ -2574,6 +2574,21 @@ component threadSafe extends="o3.internal.cfc.model" {
 		", {}, { datasource: variables.dsn.local });
 
 		queryExecute("
+			DELETE message_box WHERE context IN (
+				SELECT context_id
+				FROM context
+					INNER JOIN product on product = product_id
+				WHERE (
+					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
+					OR context_type = 'Hired Staff'
+				)
+					AND #variables.realProgram# IN (product.program, product.product_id)
+					AND context.status = 'Active'
+					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
+			)
+		", {}, { datasource: variables.dsn.local });
+
+		queryExecute("
 			DELETE training_travel WHERE context IN (
 				SELECT context_id
 				FROM context
@@ -2922,12 +2937,14 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		application.progress.hireContext = local.hireContext
 		createHiringInfo(local.hireContext, "Counselor", "UT")
-		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3], 3)
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4], 4)
 		createAssignment(local.person_id, 10001317, "Counselor")
 		linkSessions(10001317, 10001343)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, "10001317,10001343")
 
 		runScheduler()
-		assertCandidatesAssigned(3)
+		assertCandidatesAssigned(2)
 	}
 
 	private void function testCanadaSameProvince() hiringTest {
@@ -4080,5 +4097,83 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 		runScheduler()
 		assertCandidatesAssignedSpecificSessions("10001301,10001349,10001378,10001434")
+	}
+
+	private void function testTwoLinkedAreTravelAdjacent() hiringTest {
+			hiringSetup()
+
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.hireContext = local.hireContext
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week5, variables.dates.week6, variables.dates.week7, variables.dates.week8], 4)
+		linkSessions(10001417, 10001440)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, "10001574,10001417,10001440")
+
+		runScheduler()
+		assertCandidatesAssigned(2)
+		assertCandidatesAssignedSpecificSessions("10001417,10001440")
+	}
+
+	private void function testAssignedOneLinkedOtherIsTravelAdjacent() hiringTest { // Gary said don't assign them the other linked one in this case (they broke the rule already; don't fix their decision by breaking a different rule)
+		hiringSetup()
+
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.hireContext = local.hireContext
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week5, variables.dates.week6, variables.dates.week7, variables.dates.week8], 4)
+		createAssignment(local.person_id, 10001574, "Counselor")
+		linkSessions(10001417, 10001440)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, "10001574,10001417,10001440")
+
+		runScheduler()
+		assertCandidatesAssigned(1)
+		assertCandidatesAssignedSpecificSessions("10001574")
+	}
+
+	private void function testAssignedTwoLinkedOfThreeWithMiddleUnassigned() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.hireContext = local.hireContext
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week5, variables.dates.week6, variables.dates.week7, variables.dates.week8], 4)
+		createAssignment(local.person_id, 10001574, "Counselor")
+		createAssignment(local.person_id, 10001440, "Counselor")
+		linkSessions(10001417, 10001574)
+		linkSessions(10001417, 10001440)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, "10001574,10001417,10001440")
+
+		runScheduler()
+		assertCandidatesAssigned(3)
+		assertCandidatesAssignedSpecificSessions("10001574,10001417,10001440")
+	}
+
+	private void function testAssignedOneLinkedOneUnlinkedWithMiddleUnassignedLinkedToAnAssigned() hiringTest { // Gary said don't assign them the other linked one in this case (they broke the rule already; don't fix their decision by breaking a different rule)
+		hiringSetup()
+
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.hireContext = local.hireContext
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week5, variables.dates.week6, variables.dates.week7, variables.dates.week8], 4)
+		createAssignment(local.person_id, 10001574, "Counselor")
+		createAssignment(local.person_id, 10001440, "Counselor")
+		linkSessions(10001417, 10001440)
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, "10001574,10001417,10001440")
+
+		runScheduler()
+		assertCandidatesAssigned(2)
+		assertCandidatesAssignedSpecificSessions("10001574,10001440")
 	}
 }
