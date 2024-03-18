@@ -1539,21 +1539,33 @@ component threadSafe extends="o3.internal.cfc.model" {
 	private void function createAvailability(
 		required numeric context,
 		required array weeksAvailable,
-		numeric number_of_weeks = 1
+		numeric number_of_weeks = 1,
+		numeric pm_location = 0,
+		string start_date = ""
 	) {
 		application.progress.append({ currentStep: "createAvailability", tick: getTickCount() })
 
+		arguments.created_by = variables.ticket
+		if (arguments.pm_location == 0) structdelete(arguments, "pm_location")
+		if (arguments.start_date == "") structdelete(arguments, "start_date")
 		QueryExecute(
 			"
-			insert into hires_availability (context, number_of_weeks, created_by)
-			values (:context, :number_of_weeks, :created_by)
+			insert into hires_availability (
+				context,
+				number_of_weeks,
+				#arguments.pm_location == 0 ? "" : "pm_location,"#
+				#arguments.start_date == "" ? "" : "start_date,"#
+				created_by
+			)
+			values (
+				:context,
+				:number_of_weeks,
+				#arguments.pm_location == 0 ? "" : ":pm_location,"#
+				#arguments.start_date == "" ? "" : ":start_date,"#
+				:created_by
+			)
 		",
-			{
-				context: arguments.context,
-				number_of_weeks: arguments.number_of_weeks,
-				created_by = variables.ticket
-			},
-			{ datasource = variables.dsn.local, result = "local.result" }
+			arguments, { datasource = variables.dsn.local, result = "local.result" }
 		);
 
 		local.ha_id = local.result.generatedkey
@@ -4100,7 +4112,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 	}
 
 	private void function testTwoLinkedAreTravelAdjacent() hiringTest {
-			hiringSetup()
+		hiringSetup()
 
 		local.program = getProgram()
 		local.person_id = createPerson("M")
@@ -4175,5 +4187,22 @@ component threadSafe extends="o3.internal.cfc.model" {
 		runScheduler()
 		assertCandidatesAssigned(2)
 		assertCandidatesAssignedSpecificSessions("10001574,10001440")
+	}
+
+	private void function testTrainingWeirdoProdIssue() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.hireContext = local.hireContext
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [
+			variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4,
+			variables.dates.week5, variables.dates.week6, variables.dates.week7, variables.dates.week8
+		], 8, 24, "2024-06-16")
+
+		runScheduler()
+		assertCandidatesAssigned(7)
 	}
 }
