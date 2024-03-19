@@ -1546,8 +1546,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ currentStep: "createAvailability", tick: getTickCount() })
 
 		arguments.created_by = variables.ticket
-		if (arguments.pm_location == 0) structdelete(arguments, "pm_location")
-		if (arguments.start_date == "") structdelete(arguments, "start_date")
 		QueryExecute(
 			"
 			insert into hires_availability (
