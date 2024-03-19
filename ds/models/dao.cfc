@@ -1546,8 +1546,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ currentStep: "createAvailability", tick: getTickCount() })
 
 		arguments.created_by = variables.ticket
-		if (arguments.pm_location == 0) structdelete(arguments, "pm_location")
-		if (arguments.start_date == "") structdelete(arguments, "start_date")
 		QueryExecute(
 			"
 			insert into hires_availability (
@@ -2520,7 +2518,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 					OR context_type = 'Hired Staff'
 				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
-					AND context.status = 'Active'
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 			)
 		", {}, { datasource: variables.dsn.local });
@@ -2535,7 +2532,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 					OR context_type = 'Hired Staff'
 				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
-					AND context.status = 'Active'
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 			)
 		", {}, { datasource: variables.dsn.local });
@@ -2550,7 +2546,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 					OR context_type = 'Hired Staff'
 				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
-					AND context.status = 'Active'
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 			))
 		", {}, { datasource: variables.dsn.local });
@@ -2565,7 +2560,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 					OR context_type = 'Hired Staff'
 				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
-					AND context.status = 'Active'
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 			)
 		", {}, { datasource: variables.dsn.local });
@@ -2580,7 +2574,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 					OR context_type = 'Hired Staff'
 				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
-					AND context.status = 'Active'
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 			)
 		", {}, { datasource: variables.dsn.local });
@@ -2595,7 +2588,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 					OR context_type = 'Hired Staff'
 				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
-					AND context.status = 'Active'
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 			)
 		", {}, { datasource: variables.dsn.local });
@@ -2610,7 +2602,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 					OR context_type = 'Hired Staff'
 				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
-					AND context.status = 'Active'
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 			)
 		", {}, { datasource: variables.dsn.local });
@@ -2625,7 +2616,6 @@ component threadSafe extends="o3.internal.cfc.model" {
 					OR context_type IN ('Hired Staff', 'Enrollment')
 				)
 					AND (#variables.realProgram# IN (product.program, product.product_id) OR #variables.trainingProgram# IN (product.program, product.product_id))
-					AND context.status = 'Active'
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
 			)
 		", {}, { datasource: variables.dsn.local });
