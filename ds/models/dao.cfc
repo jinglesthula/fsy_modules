@@ -4195,4 +4195,24 @@ component threadSafe extends="o3.internal.cfc.model" {
 		runScheduler()
 		assertCandidatesAssigned(7)
 	}
+
+		private void function testAlreadyAssignedNoAutoAssignSession() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.hireContext = local.hireContext
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [
+			variables.dates.week0, variables.dates.week2, variables.dates.week3, variables.dates.week4, variables.dates.week5
+		], 4)
+		createAssignment(local.person_id, 10001332, "Counselor")
+		queryExecute("update pm_session set no_auto_assign = 'Y' where pm_session_id = 10001332", {}, { datasource: variables.dsn.local });
+		setSessionStaffNeeds(0)
+		setSessionStaffNeeds(10, "10001323,10001378")
+
+		runScheduler()
+		assertCandidatesAssigned(3)
+	}
 }
