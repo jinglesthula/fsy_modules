@@ -2700,7 +2700,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 	public any function runScheduler() {
 		local.users = getModel("fsyDAO").getAvailableHires(getModel("fsyDAO").getFSYYear().year);
-		local.scheduler = getModel("employmentSchedulerS");
+		local.scheduler = getModel("hiringScheduler");
 
 		local.shouldLog = StructKeyExists(application, "log") && application.log.keyExists("hiringScheduler") && application.log.hiringScheduler;
 		if (local.shouldLog && fileExists("#ExpandPath("/o3/scratch")#/hiringSchedulerLog.json"))
