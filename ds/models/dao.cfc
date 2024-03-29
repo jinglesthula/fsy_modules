@@ -20,7 +20,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				and context_type = 'Enrollment'
 		",
 			{},
-			{ datasource = variables.dsn.prereg }
+			{ datasource: variables.dsn.prereg }
 		);
 	}
 
@@ -37,7 +37,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				and prereg_link is not null
 		",
 			{},
-			{ datasource = variables.dsn.prereg }
+			{ datasource: variables.dsn.prereg }
 		);
 	}
 
@@ -55,7 +55,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				and prereg_link not like 'my[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
 		",
 			{},
-			{ datasource = variables.dsn.prereg }
+			{ datasource: variables.dsn.prereg }
 		);
 	}
 
@@ -75,7 +75,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			) data
 		",
 			{},
-			{ datasource = variables.dsn.prereg }
+			{ datasource: variables.dsn.prereg }
 		);
 	}
 
@@ -87,7 +87,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			select count(*) as completed from FSY.DBO.event where event_type = 'preRegReceived'
 		",
 			{},
-			{ datasource = variables.dsn.prereg }
+			{ datasource: variables.dsn.prereg }
 		);
 	}
 
@@ -102,7 +102,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				and context.status = 'Canceled'
 		",
 			{},
-			{ datasource = variables.dsn.prereg }
+			{ datasource: variables.dsn.prereg }
 		);
 	}
 
@@ -118,7 +118,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				and person = left(created_by, 8)
 		",
 			{},
-			{ datasource = variables.dsn.prereg }
+			{ datasource: variables.dsn.prereg }
 		);
 	}
 
@@ -140,7 +140,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			)
 		",
 			{},
-			{ datasource = variables.dsn.prereg }
+			{ datasource: variables.dsn.prereg }
 		);
 	}
 
@@ -158,7 +158,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				and context_type = 'Enrollment'
 		",
 			{},
-			{ datasource = variables.dsn.prereg }
+			{ datasource: variables.dsn.prereg }
 		);
 	}
 
@@ -182,7 +182,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			)
 		",
 			{},
-			{ datasource = variables.dsn.prereg }
+			{ datasource: variables.dsn.prereg }
 		);
 	}
 
@@ -194,7 +194,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			SELECT prereg_start, sysdatetime() as now from product where product_id = @program
 		",
 			{},
-			{ datasource = variables.dsn.prereg }
+			{ datasource: variables.dsn.prereg }
 		)
 
 		local.start = local.range.prereg_start
@@ -222,7 +222,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 					and context.created < :end
 			",
 				{ start = { value = local.sliceStart, cfsqltype = "timestamp" }, end = { value = local.sliceEnd, cfsqltype = "timestamp" } },
-				{ datasource = variables.dsn.prereg }
+				{ datasource: variables.dsn.prereg }
 			);
 
 			local.json.starts.append(local.slice.total)
@@ -238,7 +238,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 					and event.occurred < :end
 			",
 				{ start = { value = local.sliceStart, cfsqltype = "timestamp" }, end = { value = local.sliceEnd, cfsqltype = "timestamp" } },
-				{ datasource = variables.dsn.prereg }
+				{ datasource: variables.dsn.prereg }
 			);
 
 			local.json.completions.append(local.slice.total)
@@ -263,7 +263,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				)
 			",
 				{ start = { value = local.sliceStart, cfsqltype = "timestamp" }, end = { value = local.sliceEnd, cfsqltype = "timestamp" } },
-				{ datasource = variables.dsn.prereg }
+				{ datasource: variables.dsn.prereg }
 			);
 
 			local.json.assistedStarts.append(local.slice.total)
@@ -282,7 +282,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 					and context.created < :end
 			",
 				{ start = { value = local.sliceStart, cfsqltype = "timestamp" }, end = { value = local.sliceEnd, cfsqltype = "timestamp" } },
-				{ datasource = variables.dsn.prereg }
+				{ datasource: variables.dsn.prereg }
 			);
 
 			local.json.selfServeStarts.append(local.slice.total)
@@ -313,7 +313,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			(select count(*) from FSY.DBO.session_preference sp where sp.program = @program and priority = 5) as p_5
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -334,7 +334,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			order by link_preference_size
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -357,7 +357,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			order by link_member_count
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -389,7 +389,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			) as singles
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -436,7 +436,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			) as scheduler_duration_minutes
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -454,7 +454,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			where context.context_type = 'Enrollment' and context.status <> 'Canceled' and context.product = @program and section.context_id is null
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -497,7 +497,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			) as got_5
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -528,7 +528,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			) data
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -562,7 +562,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			) data2
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -600,7 +600,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			group by pm_location, start_date
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -643,7 +643,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			) data3
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -681,7 +681,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			) data
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -722,7 +722,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			) data2
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -769,7 +769,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			/* */
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -794,7 +794,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 					and context.status <> 'Canceled'
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -875,7 +875,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 					) AS unassigned_linked
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -1028,7 +1028,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 					) AS unassigned_regular
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -1046,7 +1046,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			where context.context_type = 'Enrollment' and context.status <> 'Canceled' and context.product = @program and section.context_id is null
 			",
 				{},
-				{ datasource = variables.dsn.scheduler }
+				{ datasource: variables.dsn.scheduler }
 			)
 		);
 
@@ -1119,7 +1119,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		",
 			{ realProgram = variables.realProgram },
 			{
-				datasource = variables.dsn.local,
+				datasource: variables.dsn.local,
 				result = "local.result"
 			}
 		);
@@ -1145,7 +1145,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			update cntl_value set value = :product_id, updated_by = :created_by where control = 'current_fsy_program'
 		",
 			{ product_id = arguments.product_id, created_by: variables.ticket },
-			{ datasource = variables.dsn.local }
+			{ datasource: variables.dsn.local }
 		);
 	}
 
@@ -1169,7 +1169,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			order by created desc
 		",
 			{},
-			{ datasource = variables.dsn.local }
+			{ datasource: variables.dsn.local }
 		);
 
 		if (local.result.recordCount == 0) local.next = 1;
@@ -1223,7 +1223,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				enroll_start = { value = local.time, cfsqltype="timestamp"},
 				enroll_end = { value = dateadd("m", 1, local.time), cfsqltype="timestamp"}
 			},
-			{ datasource = variables.dsn.local, result = "local.result" }
+			{ datasource: variables.dsn.local, result = "local.result" }
 		)
 
 		local.data.section = local.result.generatedKey
@@ -1284,7 +1284,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				enroll_start = { value = local.time, cfsqltype="timestamp"},
 				enroll_end = { value = dateadd("m", 1, local.time), cfsqltype="timestamp"}
 			},
-			{ datasource = variables.dsn.local, result = "local.result" }
+			{ datasource: variables.dsn.local, result = "local.result" }
 		)
 
 		local.data.female = local.result.generatedKey
@@ -1345,7 +1345,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				enroll_start = { value = local.time, cfsqltype="timestamp"},
 				enroll_end = { value = dateadd("m", 1, local.time), cfsqltype="timestamp"}
 			},
-			{ datasource = variables.dsn.local, result = "local.result" }
+			{ datasource: variables.dsn.local, result = "local.result" }
 		)
 
 		local.data.male = local.result.generatedKey
@@ -1373,7 +1373,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				section = local.data.section
 
 			},
-			{ datasource = variables.dsn.local, result = "local.result" }
+			{ datasource: variables.dsn.local, result = "local.result" }
 		)
 
 		local.data.optionGroup = local.result.recordcount > 0
@@ -1399,7 +1399,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				section = local.data.section,
 				item = local.data.female
 			},
-			{ datasource = variables.dsn.local, result = "local.result" }
+			{ datasource: variables.dsn.local, result = "local.result" }
 		)
 
 		local.data.optionItemF = local.result.recordcount > 0
@@ -1425,7 +1425,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				section = local.data.section,
 				item = local.data.male
 			},
-			{ datasource = variables.dsn.local, result = "local.result" }
+			{ datasource: variables.dsn.local, result = "local.result" }
 		)
 
 		local.data.optionItemM = local.result.recordcount > 0
@@ -1444,7 +1444,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			values ('First_#variables.ticketName#', 'Last_#variables.ticketName#', :gender, '2008-01-01', :church_id, :created_by)
 		",
 			{ gender = arguments.gender, church_id = "#Floor(Rand() * 100000000)##Floor(Rand() * 100000000)#", created_by: variables.ticket },
-			{ datasource = variables.dsn.local, result = "local.result" }
+			{ datasource: variables.dsn.local, result = "local.result" }
 		);
 
 		return local.result.generatedKey
@@ -1472,7 +1472,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				stake = arguments.stake,
 				created_by = variables.ticket
 			},
-			{ datasource = variables.dsn.local, result = "local.result" }
+			{ datasource: variables.dsn.local, result = "local.result" }
 		);
 
 		if (arguments.prereg_link == "")
@@ -1482,7 +1482,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			",
 				{ prereg_link = "my#local.result.generatedkey#", context_id = local.result.generatedkey,
 				created_by = variables.ticket },
-				{ datasource = variables.dsn.local }
+				{ datasource: variables.dsn.local }
 			);
 
 		return local.result.generatedkey
@@ -1504,7 +1504,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				product = arguments.program,
 				created_by = variables.ticket
 			},
-			{ datasource = variables.dsn.local, result = "local.result" }
+			{ datasource: variables.dsn.local, result = "local.result" }
 		);
 
 		return local.result.generatedkey
@@ -1530,7 +1530,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				country = arguments.country,
 				created_by = variables.ticket
 			},
-			{ datasource = variables.dsn.local, result = "local.result" }
+			{ datasource: variables.dsn.local, result = "local.result" }
 		);
 
 		return local.result
@@ -1563,7 +1563,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				:created_by
 			)
 		",
-			arguments, { datasource = variables.dsn.local, result = "local.result" }
+			arguments, { datasource: variables.dsn.local, result = "local.result" }
 		);
 
 		local.ha_id = local.result.generatedkey
@@ -1579,7 +1579,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 					start_date: local.week,
 				created_by = variables.ticket
 				},
-				{ datasource = variables.dsn.local, result = "local.result" }
+				{ datasource: variables.dsn.local, result = "local.result" }
 			);
 		}
 
@@ -1603,7 +1603,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				country: arguments.country,
 				created_by = variables.ticket
 			},
-			{ datasource = variables.dsn.local }
+			{ datasource: variables.dsn.local }
 		);
 	}
 
@@ -1617,7 +1617,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			insert into event (event_object, event_object_id, event_type) values ('CONTEXT', :context_id, 'preRegReceived')
 		",
 			{ context_id = arguments.context_id },
-			{ datasource = variables.dsn.local }
+			{ datasource: variables.dsn.local }
 		);
 	}
 
@@ -1632,7 +1632,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			{
 				created_by = variables.ticket
 			},
-			{ datasource = variables.dsn.local, result = "local.result" }
+			{ datasource: variables.dsn.local, result = "local.result" }
 		);
 
 		return local.result.generatedkey
@@ -1653,7 +1653,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			program: program,
 			prereg_link: prereg_link,
 			priority: priority
-		}, { datasource = variables.dsn.local });
+		}, { datasource: variables.dsn.local });
 
 		local.args = Duplicate(arguments)
 		local.args.created_by = variables.ticket
@@ -1664,7 +1664,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			values (:program, :prereg_link, :pm_location, :start_date, :priority, :created_by)
 		",
 			local.args,
-			{ datasource = variables.dsn.local }
+			{ datasource: variables.dsn.local }
 		);
 	}
 
@@ -1681,7 +1681,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			order by unit_number desc
 		",
 			{},
-			{ datasource = variables.dsn.local }
+			{ datasource: variables.dsn.local }
 		);
 
 		QueryExecute(
@@ -1691,7 +1691,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		",
 			{ unit_number = local.next.unit_number, parent = arguments.stake, name = "ward_#local.next.unit_number#_variables.ticket",
 				created_by = variables.ticket },
-			{ datasource = variables.dsn.local, result = "local.result" }
+			{ datasource: variables.dsn.local, result = "local.result" }
 		);
 
 		return local.next.unit_number
@@ -1708,7 +1708,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			order by unit_number desc
 		",
 			{},
-			{ datasource = variables.dsn.local }
+			{ datasource: variables.dsn.local }
 		);
 
 		QueryExecute(
@@ -1719,7 +1719,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		",
 			{ unit_number = local.next.unit_number, name = "stake_#local.next.unit_number#_#variables.ticket#",
 				created_by = variables.ticket },
-			{ datasource = variables.dsn.local, result = "local.result" }
+			{ datasource: variables.dsn.local, result = "local.result" }
 		);
 
 		return local.next.unit_number
@@ -1747,7 +1747,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				participant_end_date = dateFormat(dateAdd("d", 5, arguments.start_date), "yyyy-mm-dd"),
 				created_by = variables.ticket
 			},
-			{ datasource = variables.dsn.local, result = "local.result" }
+			{ datasource: variables.dsn.local, result = "local.result" }
 		);
 
 		return local.result.generatedkey
@@ -1766,7 +1766,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				product = section,
 				created_by = variables.ticket
 			},
-			{ datasource = variables.dsn.local, result = "local.section" }
+			{ datasource: variables.dsn.local, result = "local.section" }
 		)
 
 		QueryExecute(
@@ -1780,7 +1780,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				section = local.section.generatedkey,
 				created_by = variables.ticket
 			},
-			{ datasource = variables.dsn.local, result = "local.housing" }
+			{ datasource: variables.dsn.local, result = "local.housing" }
 		)
 
 		return {
@@ -1807,7 +1807,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			female = { value=arguments.female, cfsqltype="cf_sql_numeric", null=(arguments.female == 0) },
 			male = { value=arguments.male, cfsqltype="cf_sql_numeric", null=(arguments.male == 0) },
 			created_by = variables.ticket
-		}, { datasource = variables.dsn.local });
+		}, { datasource: variables.dsn.local });
 	}
 
 	// END individual setup helper functions
@@ -2394,20 +2394,20 @@ component threadSafe extends="o3.internal.cfc.model" {
 			EXEC sp_set_session_context 'noTrigger', 1;
 			delete terms_acceptance where program = (select product_id from product where short_title = '2024FSY_#variables.ticketName#')
 			EXEC sp_set_session_context 'noTrigger', 0;
-		", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete fsy_session_unit where created_by = :created_by", { created_by: variables.ticket }, { datasource = variables.dsn.local } );
-		QueryExecute("delete pm_session where created_by = :created_by", { created_by: variables.ticket }, { datasource = variables.dsn.local } );
-		QueryExecute("delete session_preference where created_by = :created_by", { created_by: variables.ticket }, { datasource = variables.dsn.local } );
-		QueryExecute("delete pm_location where created_by = :created_by", { created_by: variables.ticket }, { datasource = variables.dsn.local } );
-		QueryExecute("delete event where event_object = 'CONTEXT' and event_object_id in (select context_id from context where person in (select person_id from person where first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#'))", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete context where product in (select product_id from product where short_title like '%_#variables.ticketName#')", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete fsy_unit where created_by = :created_by", { created_by: variables.ticket }, { datasource = variables.dsn.local } );
-		QueryExecute("delete person where first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#'", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete option_item where section in (select product_id from product where short_title like 'Section_%_#variables.ticketName#')", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete option_group where section in (select product_id from product where short_title like 'Section_%_#variables.ticketName#')", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete product where short_title like '%Housing_%_#variables.ticketName#'", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete product where short_title like 'Section_%_#variables.ticketName#'", {}, { datasource = variables.dsn.local } );
-		QueryExecute("delete product where short_title = '2024FSY_#variables.ticketName#'", {}, { datasource = variables.dsn.local } );
+		", {}, { datasource: variables.dsn.local } );
+		QueryExecute("delete fsy_session_unit where created_by = :created_by", { created_by: variables.ticket }, { datasource: variables.dsn.local } );
+		QueryExecute("delete pm_session where created_by = :created_by", { created_by: variables.ticket }, { datasource: variables.dsn.local } );
+		QueryExecute("delete session_preference where created_by = :created_by", { created_by: variables.ticket }, { datasource: variables.dsn.local } );
+		QueryExecute("delete pm_location where created_by = :created_by", { created_by: variables.ticket }, { datasource: variables.dsn.local } );
+		QueryExecute("delete event where event_object = 'CONTEXT' and event_object_id in (select context_id from context where person in (select person_id from person where first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#'))", {}, { datasource: variables.dsn.local } );
+		QueryExecute("delete context where product in (select product_id from product where short_title like '%_#variables.ticketName#')", {}, { datasource: variables.dsn.local } );
+		QueryExecute("delete fsy_unit where created_by = :created_by", { created_by: variables.ticket }, { datasource: variables.dsn.local } );
+		QueryExecute("delete person where first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#'", {}, { datasource: variables.dsn.local } );
+		QueryExecute("delete option_item where section in (select product_id from product where short_title like 'Section_%_#variables.ticketName#')", {}, { datasource: variables.dsn.local } );
+		QueryExecute("delete option_group where section in (select product_id from product where short_title like 'Section_%_#variables.ticketName#')", {}, { datasource: variables.dsn.local } );
+		QueryExecute("delete product where short_title like '%Housing_%_#variables.ticketName#'", {}, { datasource: variables.dsn.local } );
+		QueryExecute("delete product where short_title like 'Section_%_#variables.ticketName#'", {}, { datasource: variables.dsn.local } );
+		QueryExecute("delete product where short_title = '2024FSY_#variables.ticketName#'", {}, { datasource: variables.dsn.local } );
 	}
 
 	public void function undoPreregAssignments(required numeric program) {
@@ -2426,15 +2426,15 @@ component threadSafe extends="o3.internal.cfc.model" {
 					and ei.context is null
 					and eio.context is null
 			)
-		", { program: arguments.program}, { datasource = variables.dsn.local });
+		", { program: arguments.program}, { datasource: variables.dsn.local });
 	}
 
 	public struct function preregSetupResults() {
-		local.program = queryExecute("select value from cntl_value where control = 'current_fsy_program'", {}, { datasource = variables.dsn.local }).value
+		local.program = queryExecute("select value from cntl_value where control = 'current_fsy_program'", {}, { datasource: variables.dsn.local }).value
 
 		return {
 			programProductID = local.program,
-			program = variables.utils.queryToStruct(queryExecute("select * from product where product_id = :product_id", { product_id: local.program }, { datasource = variables.dsn.local }))
+			program = variables.utils.queryToStruct(queryExecute("select * from product where product_id = :product_id", { product_id: local.program }, { datasource: variables.dsn.local }))
 		}
 	}
 
@@ -2459,7 +2459,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 						DATEADD(hour, -:hour - 1, (DATEADD(MINUTE, (60 - DATEPART(MINUTE, SYSDATETIME())) % 60, SYSDATETIME()))) AND
 						DATEADD(hour, -:hour, (DATEADD(MINUTE, (60 - DATEPART(MINUTE, SYSDATETIME())) % 60, SYSDATETIME())))
 
-			", { program: variables.realProgram, hour: {value: local.i, cfsqltype: "cf_sql_numeric"} }, { datasource = variables.dsn.prod });
+			", { program: variables.realProgram, hour: {value: local.i, cfsqltype: "cf_sql_numeric"} }, { datasource: variables.dsn.prod });
 
 			local.result.prepend({ count: local.hourStats.total, hour: local.hourStats.hour });
 		}
@@ -2766,6 +2766,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 	private void function hiringSetup() {
 		removeAllCandidates()
 		unlinkAllSessions()
+		setPeakWeeks()
 		setSessionStaffNeeds(numToSetTo = 10, type = "cn")
 		setSessionStaffNeeds(numToSetTo = 10, type = "ac")
 		setSessionStaffNeeds(numToSetTo = 10, type = "hc")
@@ -2782,7 +2783,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			//get all the sessions
 			local.pmSessions = QueryExecute(
 				"select pm_session_id from pm_session where YEAR(start_date) = :year",
-				{ year: local.year }, { datasource = variables.dsn.local }
+				{ year: local.year }, { datasource: variables.dsn.local }
 			);
 			local.sessions = ValueList(local.pmSessions.pm_session_id);
 		} else {
@@ -2803,7 +2804,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				updated_by = :updated_by where pm_session_id in (:sessions)
 			",
 			{ numToSetTo = arguments.numToSetTo, updated_by = variables.ticket, sessions = { value = local.sessions, list = true }, type: arguments.type },
-			{ datasource = variables.dsn.local }
+			{ datasource: variables.dsn.local }
 		);
 	}
 
@@ -2819,8 +2820,8 @@ component threadSafe extends="o3.internal.cfc.model" {
 				updated_by = :updated_by
 			where pm_session_id in (:sessions)
 			",
-			{ updated_by = variables.ticket, sessions = { value = arguments.sessions, list = true } },
-			{ datasource = variables.dsn.local }
+			{ updated_by: variables.ticket, sessions: { value: arguments.sessions, list: true, null: arguments.sessions == "" } },
+			{ datasource: variables.dsn.local }
 		);
 	}
 
@@ -2836,7 +2837,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			where pm_session_id in (:sessions)
 			",
 			{ desirability = arguments.desirability, updated_by = variables.ticket, sessions = { value = arguments.sessions, list = true } },
-			{ datasource = variables.dsn.local }
+			{ datasource: variables.dsn.local }
 		);
 	}
 
@@ -4196,7 +4197,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertCandidatesAssigned(7)
 	}
 
-		private void function testAlreadyAssignedNoAutoAssignSession() hiringTest {
+	private void function testAlreadyAssignedNoAutoAssignSession() hiringTest {
 		hiringSetup()
 
 		local.program = getProgram()
@@ -4208,11 +4209,29 @@ component threadSafe extends="o3.internal.cfc.model" {
 			variables.dates.week0, variables.dates.week2, variables.dates.week3, variables.dates.week4, variables.dates.week5
 		], 4)
 		createAssignment(local.person_id, 10001332, "Counselor")
-		queryExecute("update pm_session set no_auto_assign = 'Y' where pm_session_id = 10001332", {}, { datasource: variables.dsn.local });
+		queryExecute("update pm_session set no_auto_assign = 'Y', updated_by = '#variables.ticket#' where pm_session_id = 10001332", {}, { datasource: variables.dsn.local });
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, "10001323,10001378")
 
 		runScheduler()
 		assertCandidatesAssigned(3)
+	}
+
+	private void function testPreferPeakWeeks() hiringTest {
+		hiringSetup()
+
+		local.program = getProgram()
+		local.person_id = createPerson("M")
+		local.hireContext = createHireContext(local.person_id, local.program)
+		application.progress.hireContext = local.hireContext
+		createHiringInfo(local.hireContext, "Counselor", "UT")
+		createAvailability(local.hireContext, [
+			variables.dates.week0, variables.dates.week2, variables.dates.week3, variables.dates.week4, variables.dates.week5
+		], 1)
+		setSessionStaffNeeds(10)
+		setPeakWeeks(10001409)
+
+		runScheduler()
+		assertCandidatesAssignedSpecificSessions(10001409)
 	}
 }
