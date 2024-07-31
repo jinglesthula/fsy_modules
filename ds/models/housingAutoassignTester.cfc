@@ -7,6 +7,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 	variables.realProgram = 80000082
   variables.selector_f = 10000180
   variables.selector_m = 10000181
+  variables.pm_selector_set_template = 10000024
 	variables.trainingProgram = structKeyExists(application, "trainingProgram") ? application.trainingProgram : 80001055
 	variables.ticket = "FSY-2980"
 	variables.ticketName = reReplace(variables.ticket, "-", "_", "all")
@@ -53,8 +54,8 @@ component threadSafe extends="o3.internal.cfc.model" {
   // create pm_session
   public numeric function create_pm_session(required numeric section, required numeric option_m, required numeric option_f) {
     queryExecute("
-      insert into pm_session (TITLE, PRODUCT, START_DATE, END_DATE, SESSION_TYPE, PM_LOCATION, CREATED_BY)
-      values ('#variables.ticketName# Test Session', :product, '2024-08-04', '2024-08-10', 'FSY', 2, '#variables.ticketName#')
+      insert into pm_session (TITLE, PRODUCT, START_DATE, END_DATE, SESSION_TYPE, PM_LOCATION, PM_SELECTOR_SET_TEMPLATE, CREATED_BY)
+      values ('#variables.ticketName# Test Session', :product, '2024-08-04', '2024-08-10', 'FSY', 2, #variables.pm_selector_set_template#, '#variables.ticketName#')
     ", {product: arguments.section}, { datasource: variables.dsn.local, result: "local.pm_session" });
     if (!local.pm_session.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create pm_session", detail = serializeJSON(local.pm_session))
 
@@ -252,7 +253,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.person1 = create_person(1, "M")
     local.sectionContext = create_context_section(local.person1, local.data.products.section)
     local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
-    assign_person_group(local.person1, local.data.pm_group_m)
+    assign_person_group(local.sectionContext, local.data.pm_group_m)
 
     return {
       products: local.data.products,
