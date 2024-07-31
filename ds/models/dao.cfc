@@ -1050,7 +1050,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			)
 		);
 
-		// FIXME: code these here and put UI up for them
+		// FIKSME: code these here and put UI up for them
 		// What went wrong
 
 		return {
@@ -2700,7 +2700,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 	public any function runScheduler() {
 		local.users = getModel("fsyDAO").getAvailableHires(getModel("fsyDAO").getFSYYear().year);
-		local.scheduler = getModel("employmentSchedulerS");
+		local.scheduler = getModel("hiringScheduler");
 
 		local.shouldLog = StructKeyExists(application, "log") && application.log.keyExists("hiringScheduler") && application.log.hiringScheduler;
 		if (local.shouldLog && fileExists("#ExpandPath("/o3/scratch")#/hiringSchedulerLog.json"))
@@ -4234,4 +4234,98 @@ component threadSafe extends="o3.internal.cfc.model" {
 		runScheduler()
 		assertCandidatesAssignedSpecificSessions(10001409)
 	}
+
+	// Stuff for ds-epic-vite app
+	private array function simplifyTagContext(required array tags) {
+		local.result = []
+
+		for (local.item in arguments.tags) {
+			local.isScratch = len(local.item.template) >= 27 && left(local.item.template, 27) == "/app/o3/scratch/scratchcode"
+			local.isFSY = !local.isScratch && len(local.item.template) >= 8 && left(local.item.template, 8) == "/app/o3/"
+			local.isColdbox = len(local.item.template) >= 13 && left(local.item.template, 13) == "/app/coldbox/"
+			local.isOther = !local.isScratch && !local.isFSY && !local.isColdbox
+
+			local.fn = ""
+			if (local.item.keyExists("raw_trace")) {
+				local.found = local.item.raw_trace.reFindNoCase("\$func(.*?)\.runFunction\(", 1, true, "all");
+				application.aaa = {
+					found: local.found,
+					raw_trace: local.item.raw_trace
+				}
+				if (arrayLen(local.found) > 0 && local.found[1].pos[1] > 0) local.fn = local.found[1].match[2]
+			}
+
+			local.result.append({
+				"line": local.item.line,
+				"type": local.item.type,
+				"file": local.item.template,
+				"function": local.fn
+			})
+		}
+
+		return local.result
+	}
+
+	public struct function execCode(required string code, boolean addCfOutput=false, boolean addCfScript=true) {
+		//  all scripts run in the scope of this method, so local variables could conflict.
+		local.scratchFile = GetTempFile("#ExpandPath(".")#/scratch", "scratchCode");
+		//  creates file with .tmp extension
+		FileMove(local.scratchFile, local.scratchFile & ".cfm");
+		//  change extension to cfm so secure profile will compile and run code
+		if ( arguments.addCfScript && !Find("<cf$cript>", arguments.code) ) {
+			/*
+					If requested, wrap with CFSCRIPT tag (this is strictly for convenience), add a new line after code in case the last line is a comment
+				*/
+			arguments.code = "<cfscript>#arguments.code##Chr(13)##Chr(10)#</cfscript>";
+		}
+		if ( arguments.addCfOutput && !Find("<cfoutput>", arguments.code) ) {
+			//  If requested, wrap with CFOUTPUT tag (this is strictly for convenience)
+			arguments.code = "<cfoutput>#arguments.code#</cfoutput>";
+		}
+		cffile( output=ReplaceNoCase(arguments.code, "$cript", "script", "all"), file="#local.scratchFile#.cfm", action="write" );
+		/*
+				Restore script tags
+			*/
+		local.scratchReturnStruct = { "view": "" };
+		local.scratchStart = GetTickCount();
+		try {
+			savecontent variable="local.scratchReturnStruct.view" {
+				cfoutput() {
+					//  Needed to show any HTML code generated
+					include "../../../scratch/#GetFileFromPath(local.scratchFile)#.cfm";
+					// relative from o3/internal/cfc/remote (localtion of this file)
+				}
+			}
+		}
+		catch (any e) {
+			local.scratchReturnStruct[ "view" ] = serializeJSON({
+				"error": true,
+				"message": e.message,
+				"type": e.type,
+				"path": simplifyTagContext(e.tagContext)
+			})
+			savecontent variable="local.scratchReturnStruct.cf" {
+				cfoutput() {
+					writeDump(e);
+				}
+			}
+		}
+
+		if (isJSON(local.scratchReturnStruct.view)) {
+			local.scratchReturnStruct[ "type" ] = "json"
+			local.scratchReturnStruct[ "view" ] = deserializeJSON(local.scratchReturnStruct.view) // but just return it raw, not serialized since we'll serialize the whole thing
+		}
+		else {
+			local.scratchReturnStruct[ "type" ] = "html"
+			if (local.scratchReturnStruct.view == "") local.scratchReturnStruct[ "view" ] = "[Completed. The output was empty, like a ghost town.]"
+		}
+
+
+		local.scratchTime = CreateTimespan(0, 0, 0, (GetTickCount() - local.scratchStart) / 1000);
+		cffile( file="#local.scratchFile#.cfm", action="delete" );
+		local.scratchReturnStruct[ "completed" ] = "#DateFormat(Now(), "short")# #TimeFormat(Now(), "medium")#";
+		local.scratchReturnStruct[ "duration" ] = "#Int(local.scratchTime)#, #TimeFormat(local.scratchTime, "H:nn:ss")#";
+		return local.scratchReturnStruct;
+	}
+
 }

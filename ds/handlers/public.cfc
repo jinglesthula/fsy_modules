@@ -8,7 +8,23 @@ component extends="coldbox.system.EventHandler" {
 		rc,
 		prc
 	) {
-		prc.message = "Hello From ColdBox";
+		arguments.event.renderData(type="JSON", data={"message": "Hello From ColdBox"});
+	}
+
+	function codeExec(
+		event,
+		rc,
+		prc
+	) {
+		try {
+			local.code = deserializeJSON(GetHTTPRequestData().content).code
+			getModel("utils").setUserInfo("SetVar")
+			arguments.event.renderData(type="JSON", data=getModel("dao@ds").execCode(code = local.code));
+		}
+		catch (any e) {
+			arguments.event.renderData(type="JSON", data={ "error": true, "data": e});
+		}
+
 	}
 
 	function updateData(
