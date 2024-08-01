@@ -901,135 +901,222 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // fridge (rooms aren't fridge rooms; we just try to pair up people who have requested fridges)
+  // ❌ fridge (rooms aren't fridge rooms; we just try to pair up people who have requested fridges)
+  // ❌ failed to pair up the 2 fridgies and put them in the same room
   public struct function test_18() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
-    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id_1 = create_pm_housing(pm_session_id = local.data.pm_session, room = 101, bed = "A")
+    assign_housing_group(local.pm_housing_id_1, local.data.pm_group_m)
+    local.pm_housing_id_2 = create_pm_housing(pm_session_id = local.data.pm_session, room = 101, bed = "B")
+    assign_housing_group(local.pm_housing_id_2, local.data.pm_group_m)
+    local.pm_housing_id_3 = create_pm_housing(pm_session_id = local.data.pm_session, room = 102, bed = "A")
+    assign_housing_group(local.pm_housing_id_3, local.data.pm_group_m)
+    local.pm_housing_id_4 = create_pm_housing(pm_session_id = local.data.pm_session, room = 102, bed = "B")
+    assign_housing_group(local.pm_housing_id_4, local.data.pm_group_m)
     // person/context setup
     local.person1 = create_person(1, "M")
-    local.sectionContext = create_context_section(local.person1, local.data.products.section)
-    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
-    assign_person_group(local.sectionContext, local.data.pm_group_m)
+    local.person2 = create_person(2, "M")
+    local.person3 = create_person(3, "M")
+    local.person4 = create_person(4, "M")
+    local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
+    local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
+    local.sectionContext3 = create_context_section(local.person3, local.data.products.section)
+    local.sectionContext4 = create_context_section(local.person4, local.data.products.section)
+    local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
+    local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    local.optionContext3 = create_context_option(local.person3, local.data.products.option_m, local.sectionContext3)
+    local.optionContext4 = create_context_option(local.person4, local.data.products.option_m, local.sectionContext4)
+    assign_person_group(local.sectionContext1, local.data.pm_group_m)
+    assign_person_group(local.sectionContext2, local.data.pm_group_m)
+    assign_person_group(local.sectionContext3, local.data.pm_group_m)
+    assign_person_group(local.sectionContext4, local.data.pm_group_m)
+    create_accommodation(local.sectionContext2, "Fridge");
+    create_accommodation(local.sectionContext4, "Fridge");
 
     return {
       products: local.data.products,
       pm_session: local.data.pm_session,
       pm_group_m: local.data.pm_group_m,
       person1: local.person1,
-      sectionContext: local.sectionContext,
-      optionContext: local.optionContext
+      person2: local.person2,
+      person3: local.person3,
+      person4: local.person4,
+      sectionContext1: local.sectionContext1,
+      sectionContext2: local.sectionContext2,
+      sectionContext3: local.sectionContext3,
+      sectionContext4: local.sectionContext4,
+      optionContext1: local.optionContext1,
+      optionContext2: local.optionContext2,
+      optionContext3: local.optionContext3,
+      optionContext4: local.optionContext4
     }
   }
 
-  // wheelchair + fridge before wheelchair
+  // ✅ wheelchair + fridge before wheelchair
   public struct function test_19() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A", wheelchair = true)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B", wheelchair = true)
     assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
     // person/context setup
     local.person1 = create_person(1, "M")
-    local.sectionContext = create_context_section(local.person1, local.data.products.section)
-    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
-    assign_person_group(local.sectionContext, local.data.pm_group_m)
+    local.person2 = create_person(2, "M")
+    local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
+    local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
+    local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
+    local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    assign_person_group(local.sectionContext1, local.data.pm_group_m)
+    assign_person_group(local.sectionContext2, local.data.pm_group_m)
+    create_accommodation(local.sectionContext2, "Wheelchair");
+    create_accommodation(local.sectionContext2, "Fridge");
+    create_accommodation(local.sectionContext1, "Wheelchair");
 
     return {
       products: local.data.products,
       pm_session: local.data.pm_session,
       pm_group_m: local.data.pm_group_m,
       person1: local.person1,
-      sectionContext: local.sectionContext,
-      optionContext: local.optionContext
+      person2: local.person2,
+      sectionContext1: local.sectionContext1,
+      sectionContext2: local.sectionContext2,
+      optionContext1: local.optionContext1,
+      optionContext2: local.optionContext2
     }
   }
 
-  // wheelchair before no_stairs + fridge
+  // ✅ wheelchair before no_stairs + fridge
   public struct function test_20() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A", wheelchair = true)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B", wheelchair = true)
     assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
     // person/context setup
-    local.person1 = create_person(1, "M")
-    local.sectionContext = create_context_section(local.person1, local.data.products.section)
-    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
-    assign_person_group(local.sectionContext, local.data.pm_group_m)
+    local.person1 = create_person(1, "M", 15, "P1")
+    local.person2 = create_person(2, "M", 15, "P2")
+    local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
+    local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
+    local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
+    local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    assign_person_group(local.sectionContext1, local.data.pm_group_m)
+    assign_person_group(local.sectionContext2, local.data.pm_group_m)
+    create_accommodation(local.sectionContext2, "Wheelchair");
+    create_accommodation(local.sectionContext1, "No Stairs");
+    create_accommodation(local.sectionContext1, "Fridge");
 
     return {
       products: local.data.products,
       pm_session: local.data.pm_session,
       pm_group_m: local.data.pm_group_m,
       person1: local.person1,
-      sectionContext: local.sectionContext,
-      optionContext: local.optionContext
+      person2: local.person2,
+      sectionContext1: local.sectionContext1,
+      sectionContext2: local.sectionContext2,
+      optionContext1: local.optionContext1,
+      optionContext2: local.optionContext2
     }
   }
 
-  // no_stairs + fridge before no_stairs
+  // ✅ no_stairs + fridge before no_stairs
   public struct function test_21() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A", no_stairs = true)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B", no_stairs = true)
     assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
     // person/context setup
-    local.person1 = create_person(1, "M")
-    local.sectionContext = create_context_section(local.person1, local.data.products.section)
-    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
-    assign_person_group(local.sectionContext, local.data.pm_group_m)
+    local.person1 = create_person(1, "M", 15, "P1")
+    local.person2 = create_person(2, "M", 15, "P2")
+    local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
+    local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
+    local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
+    local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    assign_person_group(local.sectionContext1, local.data.pm_group_m)
+    assign_person_group(local.sectionContext2, local.data.pm_group_m)
+    create_accommodation(local.sectionContext2, "Fridge");
+    create_accommodation(local.sectionContext2, "No Stairs");
+    create_accommodation(local.sectionContext1, "No Stairs");
 
     return {
       products: local.data.products,
       pm_session: local.data.pm_session,
       pm_group_m: local.data.pm_group_m,
       person1: local.person1,
-      sectionContext: local.sectionContext,
-      optionContext: local.optionContext
+      person2: local.person2,
+      sectionContext1: local.sectionContext1,
+      sectionContext2: local.sectionContext2,
+      optionContext1: local.optionContext1,
+      optionContext2: local.optionContext2
     }
   }
 
-  // no_stairs before fridge
+  // ✅ no_stairs before fridge
   public struct function test_22() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A", no_stairs = true)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B", no_stairs = true)
     assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
     // person/context setup
-    local.person1 = create_person(1, "M")
-    local.sectionContext = create_context_section(local.person1, local.data.products.section)
-    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
-    assign_person_group(local.sectionContext, local.data.pm_group_m)
+    local.person1 = create_person(1, "M", 15, "P1")
+    local.person2 = create_person(2, "M", 15, "P2")
+    local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
+    local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
+    local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
+    local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    assign_person_group(local.sectionContext1, local.data.pm_group_m)
+    assign_person_group(local.sectionContext2, local.data.pm_group_m)
+    create_accommodation(local.sectionContext2, "No Stairs");
+    create_accommodation(local.sectionContext1, "Fridge");
 
     return {
       products: local.data.products,
       pm_session: local.data.pm_session,
       pm_group_m: local.data.pm_group_m,
       person1: local.person1,
-      sectionContext: local.sectionContext,
-      optionContext: local.optionContext
+      person2: local.person2,
+      sectionContext1: local.sectionContext1,
+      sectionContext2: local.sectionContext2,
+      optionContext1: local.optionContext1,
+      optionContext2: local.optionContext2
     }
   }
 
-  // fridge before normal
+  // ✅ fridge before normal
   public struct function test_23() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A", no_stairs = true)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B", no_stairs = true)
     assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
     // person/context setup
-    local.person1 = create_person(1, "M")
-    local.sectionContext = create_context_section(local.person1, local.data.products.section)
-    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
-    assign_person_group(local.sectionContext, local.data.pm_group_m)
+    local.person1 = create_person(1, "M", 15, "P1")
+    local.person2 = create_person(2, "M", 15, "P2")
+    local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
+    local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
+    local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
+    local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    assign_person_group(local.sectionContext1, local.data.pm_group_m)
+    assign_person_group(local.sectionContext2, local.data.pm_group_m)
+    create_accommodation(local.sectionContext2, "Fridge");
 
     return {
       products: local.data.products,
       pm_session: local.data.pm_session,
       pm_group_m: local.data.pm_group_m,
       person1: local.person1,
-      sectionContext: local.sectionContext,
-      optionContext: local.optionContext
+      person2: local.person2,
+      sectionContext1: local.sectionContext1,
+      sectionContext2: local.sectionContext2,
+      optionContext1: local.optionContext1,
+      optionContext2: local.optionContext2
     }
   }
 
