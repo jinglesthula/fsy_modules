@@ -190,13 +190,30 @@ component threadSafe extends="o3.internal.cfc.model" {
     ", {}, { datasource: variables.dsn.local });
   }
 
+  public void function link_roommates(required numeric session_link, required numeric housing1, required numeric housing2) {
+    queryExecute("
+      update context set session_link = #arguments.session_link#, roommate_context = #arguments.housing2#, updated_by = '#variables.ticketName#'
+      where context_id = #arguments.housing1#
+    ", {}, { datasource: variables.dsn.local });
+
+    queryExecute("
+      update context set session_link = #arguments.session_link#, roommate_context = #arguments.housing1#, updated_by = '#variables.ticketName#'
+      where context_id = #arguments.housing2#
+    ", {}, { datasource: variables.dsn.local });
+  }
+
   // TEST CASES
   /*
     run them like so, in scratch:
 
     ```
+    test_no = 2 // which test to run
     hat = variables.injector.getInstance("housingAutoassignTester@ds")
-    writedump(hat.test(1)) // number of test to run
+    res = hat.test(test_no)
+
+    writedump({ test: test_no })
+    writedump(res)
+    writedump(res.result.pm_session)
     ```
   */
 
@@ -243,7 +260,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 
   // tests (but really, these are just data setup conveniences for testing the housing > people auto-assign button in the UI.  No asserts here or nuthin'.)
 
-  // a male without a roommate is placed in an empty room
+  // ✅ a male without a roommate is placed in an empty room
   public struct function test_1() {
     // session setup
     local.data = setup_session()
@@ -265,11 +282,13 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // A minor male participant with a minor male roommate should be placed together with the roommate in an empty room.
+  // ✅ A minor male participant with a minor male roommate should be placed together with the roommate in an empty room.
   public struct function test_2() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B")
     assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
     // person/context setup
     local.person1 = create_person(1, "M")
@@ -278,6 +297,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
     local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    link_roommates(local.sectionContext1, local.optionContext1, local.optionContext2)
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
 
@@ -294,11 +314,13 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // A minor male participant with an adult male roommate should be placed together with the roommate in an empty room.
+  // ✅ A minor male participant with an adult male roommate should be placed together with the roommate in an empty room.
   public struct function test_3() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B")
     assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
     // person/context setup
     local.person1 = create_person(1, "M", 15)
@@ -307,6 +329,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
     local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    link_roommates(local.sectionContext1, local.optionContext1, local.optionContext2)
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
 
@@ -323,11 +346,13 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
 }
 
-  // A male participant without a roommate should be placed in a room where another age-matching male is already placed.
+  // ✅ A male participant without a roommate should be placed in a room where another age-matching male is already placed.
   public struct function test_4() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B")
     assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
     // person/context setup
     local.person1 = create_person(1, "M", 15)
@@ -338,6 +363,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
+    assign_person_housing(local.sectionContext2, local.pm_housing_id)
 
     return {
       products: local.data.products,
@@ -352,11 +378,13 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // A male participant without a roommate should not be placed in a room where another age-non-matching male is already placed.
+  // ✅ A male participant without a roommate should NOT be placed in a room where another age-non-matching male is already placed.
   public struct function test_5() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B")
     assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
     // person/context setup
     local.person1 = create_person(1, "M", 15)
@@ -367,6 +395,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
+    assign_person_housing(local.sectionContext2, local.pm_housing_id)
 
     return {
       products: local.data.products,
@@ -394,6 +423,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
     local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    link_roommates(local.sectionContext1, local.optionContext1, local.optionContext2)
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
     local.person3 = create_person(3, "M", 15)
@@ -417,7 +447,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // A minor male participant with a minor male roommate should not be placed together with the roommate in a room where another age-non-matching male is already placed.
+  // A minor male participant with a minor male roommate should NOT be placed together with the roommate in a room where another age-non-matching male is already placed.
   public struct function test_7() {
     // session setup
     local.data = setup_session()
@@ -430,6 +460,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
     local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    link_roommates(local.sectionContext1, local.optionContext1, local.optionContext2)
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
     local.person3 = create_person(3, "M", 18)
@@ -453,7 +484,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // A male minor participant without a roommate should not be placed in a mixed room.
+  // A male minor participant without a roommate should NOT be placed in a mixed room.
   public struct function test_8() {
     // session setup
     local.data = setup_session()
@@ -489,7 +520,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // A male adult participant without a roommate should not be placed in a mixed room.
+  // A male adult participant without a roommate should NOT be placed in a mixed room.
   public struct function test_9() {
     // session setup
     local.data = setup_session()
@@ -525,7 +556,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // A minor male participant with a minor male roommate should not be placed in a mixed room.
+  // A minor male participant with a minor male roommate should NOT be placed in a mixed room.
   public struct function test_10() {
     // session setup
     local.data = setup_session()
@@ -539,6 +570,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
     local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    link_roommates(local.sectionContext1, local.optionContext1, local.optionContext2)
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
 
@@ -562,7 +594,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // A minor male participant with an adult male roommate should not be placed in a mixed room.
+  // A minor male participant with an adult male roommate should NOT be placed in a mixed room.
   public struct function test_11() {
     // session setup
     local.data = setup_session()
@@ -576,6 +608,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
     local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    link_roommates(local.sectionContext1, local.optionContext1, local.optionContext2)
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
 
@@ -599,7 +632,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // A minor male participant with an adult male roommate should not be placed in a room with a single male minor.
+  // A minor male participant with an adult male roommate should NOT be placed in a room with a single male minor.
   public struct function test_12() {
     // session setup
     local.data = setup_session()
@@ -616,6 +649,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
     local.optionContext3 = create_context_option(local.person3, local.data.products.option_m, local.sectionContext3)
+    link_roommates(local.sectionContext1, local.optionContext1, local.optionContext2)
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
     assign_person_group(local.sectionContext3, local.data.pm_group_m)
@@ -643,7 +677,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // A minor male participant with an adult male roommate should not be placed in a room with a single male adult.
+  // A minor male participant with an adult male roommate should NOT be placed in a room with a single male adult.
   public struct function test_13() {
     // session setup
     local.data = setup_session()
@@ -660,6 +694,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
     local.optionContext3 = create_context_option(local.person3, local.data.products.option_m, local.sectionContext3)
+    link_roommates(local.sectionContext1, local.optionContext1, local.optionContext2)
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
     assign_person_group(local.sectionContext3, local.data.pm_group_m)
