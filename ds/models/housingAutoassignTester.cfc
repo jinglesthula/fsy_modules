@@ -143,21 +143,31 @@ component threadSafe extends="o3.internal.cfc.model" {
   }
 
   // create accommodations
-  public numeric function create_accommodation(required numeric contextID, required string accommodationType) {
+  public void function create_accommodation(required numeric contextID, required string accommodationType) {
     queryExecute("
-      insert into accommodation (CONTEXT, TYPE)
-      values (#arguments.contextID#, '#arguments.accommodationType#')
+      insert into accommodation (CONTEXT, TYPE, STATUS, CREATED_BY)
+      values (#arguments.contextID#, '#arguments.accommodationType#', 'Approved', '#variables.ticketName#')
     ", {}, { datasource: variables.dsn.local, result: "local.accommodation" });
-    if (!local.accommodation.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create accommodation", detail = serializeJSON(local.accommodation));
-
-    return local.accommodation.generatedKey;
+    if (local.accommodation.recordCount == 0) throw(type = "ds.error", message = "Failed to create accommodation", detail = serializeJSON(local.accommodation));
   }
 
   // create pm_housing
-  public numeric function create_pm_housing(required numeric pm_session_id, string building = "BLDG_A", string room = "101", string bed = "A", string apartment) {
+  public numeric function create_pm_housing(
+    required numeric pm_session_id, string building = "BLDG_A", string room = "101", string bed = "A", string apartment, boolean wheelchair = false, boolean no_stairs = false
+  ) {
     queryExecute("
-      insert into pm_housing (PM_SESSION, BUILDING, APARTMENT, ROOM, BED, CREATED_BY)
-      values (#arguments.pm_session_id#, '#arguments.building#', :apartment, '#arguments.room#', '#arguments.bed#', '#variables.ticketName#')
+      insert into pm_housing (
+        PM_SESSION, BUILDING, APARTMENT, ROOM, BED,
+        #arguments.wheelchair ? "WHEELCHAIR, " : ""#
+        #arguments.no_stairs ? "NO_STAIRS, " : ""#
+        CREATED_BY
+      )
+      values (
+        #arguments.pm_session_id#, '#arguments.building#', :apartment, '#arguments.room#', '#arguments.bed#',
+        #arguments.wheelchair ? "'Y', " : ""#
+        #arguments.no_stairs ? "'Y', " : ""#
+        '#variables.ticketName#'
+      )
     ", {
       apartment: {value: arguments.keyExists("apartment") ? arguments.apartment : "", null: !arguments.keyExists("apartment")}
     }, { datasource: variables.dsn.local, result: "local.pm_housing" });
@@ -246,6 +256,7 @@ component threadSafe extends="o3.internal.cfc.model" {
   public void function teardown() {
     // clean slate
     deleteRecord("pm_housing")
+    deleteRecord("accommodation")
     deleteRecord("context")
     deleteRecord("person")
     deleteRecord("pm_group_selector")
@@ -840,17 +851,20 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // wheelchair
+  // ✅ wheelchair
   public struct function test_16() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
-    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id_1 = create_pm_housing(pm_session_id = local.data.pm_session, room = 101, wheelchair = false)
+    assign_housing_group(local.pm_housing_id_1, local.data.pm_group_m)
+    local.pm_housing_id_2 = create_pm_housing(pm_session_id = local.data.pm_session, room = 102, wheelchair = true)
+    assign_housing_group(local.pm_housing_id_2, local.data.pm_group_m)
     // person/context setup
     local.person1 = create_person(1, "M")
     local.sectionContext = create_context_section(local.person1, local.data.products.section)
     local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
     assign_person_group(local.sectionContext, local.data.pm_group_m)
+    create_accommodation(local.sectionContext, "Wheelchair");
 
     return {
       products: local.data.products,
@@ -862,17 +876,20 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // no_stairs
+  // ✅ no_stairs
   public struct function test_17() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
-    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id_1 = create_pm_housing(pm_session_id = local.data.pm_session, room = 101, no_stairs = false)
+    assign_housing_group(local.pm_housing_id_1, local.data.pm_group_m)
+    local.pm_housing_id_2 = create_pm_housing(pm_session_id = local.data.pm_session, room = 102, no_stairs = true)
+    assign_housing_group(local.pm_housing_id_2, local.data.pm_group_m)
     // person/context setup
     local.person1 = create_person(1, "M")
     local.sectionContext = create_context_section(local.person1, local.data.products.section)
     local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
     assign_person_group(local.sectionContext, local.data.pm_group_m)
+    create_accommodation(local.sectionContext, "No Stairs");
 
     return {
       products: local.data.products,
@@ -884,7 +901,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // fridge
+  // fridge (rooms aren't fridge rooms; we just try to pair up people who have requested fridges)
   public struct function test_18() {
     // session setup
     local.data = setup_session()
