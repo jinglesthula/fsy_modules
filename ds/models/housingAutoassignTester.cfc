@@ -101,10 +101,10 @@ component threadSafe extends="o3.internal.cfc.model" {
   }
 
   // create participant people
-  public numeric function create_person(required numeric lds_account_id, required string gender, string age = 15) {
+  public numeric function create_person(required numeric lds_account_id, required string gender, string age = 15, string first_name = "Firsty") {
     queryExecute("
       insert into person (FIRST_NAME, LAST_NAME, GENDER, BIRTHDATE, LDS_ACCOUNT_ID, CREATED_BY)
-      values ('Firsty', 'Lasterson', '#arguments.gender#', '#2024 - arguments.age#-01-01', #arguments.lds_account_id#, '#variables.ticketName#')
+      values ('#arguments.first_name#', 'Lasterson', '#arguments.gender#', '#2024 - arguments.age#-01-01', #arguments.lds_account_id#, '#variables.ticketName#')
     ", {}, { datasource: variables.dsn.local, result: "local.person" });
     if (!local.person.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create person", detail = serializeJSON(local.person));
 
@@ -410,11 +410,15 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // A minor male participant with a minor male roommate should be placed together with the roommate in a room where another age-matching male is already placed.
+  // ✅ A minor male participant with a minor male roommate should be placed together with the roommate in a room where another age-matching male is already placed.
   public struct function test_6() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "C")
     assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
     // person/context setup
     local.person1 = create_person(1, "M", 15)
@@ -430,6 +434,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.sectionContext3 = create_context_section(local.person3, local.data.products.section)
     local.optionContext3 = create_context_option(local.person3, local.data.products.option_m, local.sectionContext3)
     assign_person_group(local.sectionContext3, local.data.pm_group_m)
+    assign_person_housing(local.sectionContext3, local.pm_housing_id)
 
     return {
       products: local.data.products,
@@ -447,11 +452,15 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // A minor male participant with a minor male roommate should NOT be placed together with the roommate in a room where another age-non-matching male is already placed.
+  // ✅ A minor male participant with a minor male roommate should NOT be placed together with the roommate in a room where another age-non-matching male is already placed.
   public struct function test_7() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "C")
     assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
     // person/context setup
     local.person1 = create_person(1, "M", 15)
@@ -467,6 +476,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.sectionContext3 = create_context_section(local.person3, local.data.products.section)
     local.optionContext3 = create_context_option(local.person3, local.data.products.option_m, local.sectionContext3)
     assign_person_group(local.sectionContext3, local.data.pm_group_m)
+    assign_person_housing(local.sectionContext3, local.pm_housing_id)
 
     return {
       products: local.data.products,
@@ -484,14 +494,18 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // A male minor participant without a roommate should NOT be placed in a mixed room.
+  // ✅ A male minor participant without a roommate should NOT be placed in a mixed room.
   public struct function test_8() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
-    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id_1 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A")
+    assign_housing_group(local.pm_housing_id_1, local.data.pm_group_m)
+    local.pm_housing_id_2 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B")
+    assign_housing_group(local.pm_housing_id_2, local.data.pm_group_m)
+    local.pm_housing_id_3 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "C")
+    assign_housing_group(local.pm_housing_id_3, local.data.pm_group_m)
     // person/context setup
-    local.person1 = create_person(1, "M", 15)
+    local.person1 = create_person(1, "M", 18)
     local.person2 = create_person(2, "F", 15)
     local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
     local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
@@ -499,6 +513,8 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
+    assign_person_housing(local.sectionContext1, local.pm_housing_id_1)
+    assign_person_housing(local.sectionContext2, local.pm_housing_id_2)
     local.person3 = create_person(3, "M", 15)
     local.sectionContext3 = create_context_section(local.person3, local.data.products.section)
     local.optionContext3 = create_context_option(local.person3, local.data.products.option_m, local.sectionContext3)
@@ -520,19 +536,25 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // A male adult participant without a roommate should NOT be placed in a mixed room.
+  // ✅ A male adult participant without a roommate should NOT be placed in a mixed room.
   public struct function test_9() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
-    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id_1 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A")
+    assign_housing_group(local.pm_housing_id_1, local.data.pm_group_m)
+    local.pm_housing_id_2 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B")
+    assign_housing_group(local.pm_housing_id_2, local.data.pm_group_m)
+    local.pm_housing_id_3 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "C")
+    assign_housing_group(local.pm_housing_id_3, local.data.pm_group_m)
     // person/context setup
-    local.person1 = create_person(1, "M", 15)
+    local.person1 = create_person(1, "M", 18)
     local.person2 = create_person(2, "F", 15)
     local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
     local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
     local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    assign_person_housing(local.sectionContext1, local.pm_housing_id_1)
+    assign_person_housing(local.sectionContext2, local.pm_housing_id_2)
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
     local.person3 = create_person(3, "M", 18)
@@ -556,16 +578,22 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // A minor male participant with a minor male roommate should NOT be placed in a mixed room.
+  // ✅ A minor male participant with a minor male roommate should NOT be placed in a mixed room.
   public struct function test_10() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
-    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id_1 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A")
+    assign_housing_group(local.pm_housing_id_1, local.data.pm_group_m)
+    local.pm_housing_id_2 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B")
+    assign_housing_group(local.pm_housing_id_2, local.data.pm_group_m)
+    local.pm_housing_id_3 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "C")
+    assign_housing_group(local.pm_housing_id_3, local.data.pm_group_m)
+    local.pm_housing_id_4 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "D")
+    assign_housing_group(local.pm_housing_id_4, local.data.pm_group_m)
 
     // person/context setup
-    local.person1 = create_person(1, "M", 12)  // Minor male
-    local.person2 = create_person(2, "M", 12)  // Minor male roommate
+    local.person1 = create_person(1, "M", 15)  // Minor male
+    local.person2 = create_person(2, "M", 15)  // Minor male roommate
     local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
     local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
     local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
@@ -574,11 +602,16 @@ component threadSafe extends="o3.internal.cfc.model" {
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
 
-    // Ensure a mixed room is available
-    local.mixed_room = create_room(local.data.products.mixed_room)
-
-    // Link the persons as roommates
-    link_roommates(local.person1, local.person2)
+    local.person3 = create_person(3, "M", 18)
+    local.person4 = create_person(4, "M", 15)
+    local.sectionContext3 = create_context_section(local.person3, local.data.products.section)
+    local.sectionContext4 = create_context_section(local.person4, local.data.products.section)
+    local.optionContext3 = create_context_option(local.person3, local.data.products.option_m, local.sectionContext3)
+    local.optionContext4 = create_context_option(local.person4, local.data.products.option_m, local.sectionContext4)
+    assign_person_housing(local.sectionContext3, local.pm_housing_id_3)
+    assign_person_housing(local.sectionContext4, local.pm_housing_id_4)
+    assign_person_group(local.sectionContext3, local.data.pm_group_m)
+    assign_person_group(local.sectionContext4, local.data.pm_group_m)
 
     return {
       products: local.data.products,
@@ -586,24 +619,35 @@ component threadSafe extends="o3.internal.cfc.model" {
       pm_group_m: local.data.pm_group_m,
       person1: local.person1,
       person2: local.person2,
+      person3: local.person3,
+      person4: local.person4,
       sectionContext1: local.sectionContext1,
       sectionContext2: local.sectionContext2,
+      sectionContext3: local.sectionContext3,
+      sectionContext4: local.sectionContext4,
       optionContext1: local.optionContext1,
       optionContext2: local.optionContext2,
-      mixed_room: local.mixed_room
+      optionContext3: local.optionContext3,
+      optionContext4: local.optionContext4
     }
   }
 
-  // A minor male participant with an adult male roommate should NOT be placed in a mixed room.
+  // ✅ A minor male participant with an adult male roommate should NOT be placed in a mixed room.
   public struct function test_11() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
-    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id_1 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A")
+    assign_housing_group(local.pm_housing_id_1, local.data.pm_group_m)
+    local.pm_housing_id_2 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B")
+    assign_housing_group(local.pm_housing_id_2, local.data.pm_group_m)
+    local.pm_housing_id_3 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "C")
+    assign_housing_group(local.pm_housing_id_3, local.data.pm_group_m)
+    local.pm_housing_id_4 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "D")
+    assign_housing_group(local.pm_housing_id_4, local.data.pm_group_m)
 
     // person/context setup
-    local.person1 = create_person(1, "M", 12)  // Minor male
-    local.person2 = create_person(2, "F", 18)  // Adult female roommate
+    local.person1 = create_person(1, "M", 15)  // Minor male
+    local.person2 = create_person(2, "M", 18)  // Adult male roommate
     local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
     local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
     local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
@@ -612,11 +656,16 @@ component threadSafe extends="o3.internal.cfc.model" {
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
 
-    // Ensure a mixed room is available
-    local.mixed_room = create_room(local.data.products.mixed_room)
-
-    // Link the persons as roommates
-    link_roommates(local.person1, local.person2)
+    local.person3 = create_person(3, "M", 18)
+    local.person4 = create_person(4, "M", 15)
+    local.sectionContext3 = create_context_section(local.person3, local.data.products.section)
+    local.sectionContext4 = create_context_section(local.person4, local.data.products.section)
+    local.optionContext3 = create_context_option(local.person3, local.data.products.option_m, local.sectionContext3)
+    local.optionContext4 = create_context_option(local.person4, local.data.products.option_m, local.sectionContext4)
+    assign_person_housing(local.sectionContext3, local.pm_housing_id_3)
+    assign_person_housing(local.sectionContext4, local.pm_housing_id_4)
+    assign_person_group(local.sectionContext3, local.data.pm_group_m)
+    assign_person_group(local.sectionContext4, local.data.pm_group_m)
 
     return {
       products: local.data.products,
@@ -624,41 +673,44 @@ component threadSafe extends="o3.internal.cfc.model" {
       pm_group_m: local.data.pm_group_m,
       person1: local.person1,
       person2: local.person2,
+      person3: local.person3,
+      person4: local.person4,
       sectionContext1: local.sectionContext1,
       sectionContext2: local.sectionContext2,
+      sectionContext3: local.sectionContext3,
+      sectionContext4: local.sectionContext4,
       optionContext1: local.optionContext1,
       optionContext2: local.optionContext2,
-      mixed_room: local.mixed_room
+      optionContext3: local.optionContext3,
+      optionContext4: local.optionContext4
     }
   }
 
-  // A minor male participant with an adult male roommate should NOT be placed in a room with a single male minor.
+  // ✅ A minor male participant with an adult male roommate should NOT be placed in a room with a single male minor.
   public struct function test_12() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A")
     assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
-
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "C")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
     // person/context setup
-    local.person1 = create_person(1, "M", 12)  // Minor male
-    local.person2 = create_person(2, "M", 18)  // Adult male roommate
-    local.person3 = create_person(3, "M", 12)  // Single male minor in a room
+    local.person1 = create_person(1, "M", 15)
+    local.person2 = create_person(2, "M", 18)
     local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
     local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
-    local.sectionContext3 = create_context_section(local.person3, local.data.products.section)
     local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
-    local.optionContext3 = create_context_option(local.person3, local.data.products.option_m, local.sectionContext3)
     link_roommates(local.sectionContext1, local.optionContext1, local.optionContext2)
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
+    local.person3 = create_person(3, "M", 15)
+    local.sectionContext3 = create_context_section(local.person3, local.data.products.section)
+    local.optionContext3 = create_context_option(local.person3, local.data.products.option_m, local.sectionContext3)
     assign_person_group(local.sectionContext3, local.data.pm_group_m)
-
-    // Ensure the room has at least two available beds
-    local.room = create_room(local.data.products.mixed_room, 2)
-
-    // Link the persons as roommates
-    link_roommates(local.person1, local.person2)
+    assign_person_housing(local.sectionContext3, local.pm_housing_id)
 
     return {
       products: local.data.products,
@@ -672,54 +724,451 @@ component threadSafe extends="o3.internal.cfc.model" {
       sectionContext3: local.sectionContext3,
       optionContext1: local.optionContext1,
       optionContext2: local.optionContext2,
-      optionContext3: local.optionContext3,
-      room: local.room
+      optionContext3: local.optionContext3
     }
   }
 
-  // A minor male participant with an adult male roommate should NOT be placed in a room with a single male adult.
+  // ✅ A minor male participant with an adult male roommate should NOT be placed in a room with a single male adult.
   public struct function test_13() {
+    // session setup
+    local.data = setup_session()
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, bed = "C")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    // person/context setup
+    local.person1 = create_person(1, "M", 15)
+    local.person2 = create_person(2, "M", 18)
+    local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
+    local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
+    local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
+    local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    link_roommates(local.sectionContext1, local.optionContext1, local.optionContext2)
+    assign_person_group(local.sectionContext1, local.data.pm_group_m)
+    assign_person_group(local.sectionContext2, local.data.pm_group_m)
+    local.person3 = create_person(3, "M", 18)
+    local.sectionContext3 = create_context_section(local.person3, local.data.products.section)
+    local.optionContext3 = create_context_option(local.person3, local.data.products.option_m, local.sectionContext3)
+    assign_person_group(local.sectionContext3, local.data.pm_group_m)
+    assign_person_housing(local.sectionContext3, local.pm_housing_id)
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      person1: local.person1,
+      person2: local.person2,
+      person3: local.person3,
+      sectionContext1: local.sectionContext1,
+      sectionContext2: local.sectionContext2,
+      sectionContext3: local.sectionContext3,
+      optionContext1: local.optionContext1,
+      optionContext2: local.optionContext2,
+      optionContext3: local.optionContext3
+    }
+  }
+
+  // ✅ Room of 2 beds w/ group 1 assigned 1st bed, group 2 assigned other bed, and 2 people assigned, one to either group
+  public struct function test_14() {
+    // session setup
+    local.data = setup_session()
+    local.other_group_m = create_pm_group(local.data.pm_session, 2, "M")
+    local.pm_housing_id_1 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A")
+    assign_housing_group(local.pm_housing_id_1, local.data.pm_group_m)
+    local.pm_housing_id_2 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B")
+    assign_housing_group(local.pm_housing_id_2, local.other_group_m)
+
+    // person/context setup
+    local.person1 = create_person(1, "M", 15)
+    local.person2 = create_person(2, "M", 15)
+    local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
+    local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
+    local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
+    local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    assign_person_group(local.sectionContext1, local.data.pm_group_m)
+    assign_person_group(local.sectionContext2, local.other_group_m)
+
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      other_group_m: local.other_group_m,
+      person1: local.person1,
+      person2: local.person2,
+      sectionContext1: local.sectionContext1,
+      sectionContext2: local.sectionContext2,
+      optionContext1: local.optionContext1,
+      optionContext2: local.optionContext2
+    }
+  }
+
+	// ✅ Room of 2 beds w/ group 2 assigned 1st bed, group 1 assigned other bed, and 2 people assigned, one to either group (to ensure that order doesn't matter)
+  public struct function test_15() {
+    // session setup
+    local.data = setup_session()
+    local.other_group_m = create_pm_group(local.data.pm_session, 2, "M")
+    local.pm_housing_id_1 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A")
+    assign_housing_group(local.pm_housing_id_1, local.other_group_m) // <------------------------------- right here. this is the difference with the previous test.  It's to ensure that order doesn't matter, just that we care about does the room have open beds for the group in question.
+    local.pm_housing_id_2 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B")
+    assign_housing_group(local.pm_housing_id_2, local.data.pm_group_m)
+
+    // person/context setup
+    local.person1 = create_person(1, "M", 15, "Group One")
+    local.person2 = create_person(2, "M", 15, "Group Two")
+    local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
+    local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
+    local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
+    local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    assign_person_group(local.sectionContext1, local.data.pm_group_m)
+    assign_person_group(local.sectionContext2, local.other_group_m)
+
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      other_group_m: local.other_group_m,
+      person1: local.person1,
+      person2: local.person2,
+      sectionContext1: local.sectionContext1,
+      sectionContext2: local.sectionContext2,
+      optionContext1: local.optionContext1,
+      optionContext2: local.optionContext2
+    }
+  }
+
+  // wheelchair
+  public struct function test_16() {
     // session setup
     local.data = setup_session()
     local.pm_housing_id = create_pm_housing(local.data.pm_session)
     assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
-
     // person/context setup
-    local.person1 = create_person(1, "M", 12)  // Minor male
-    local.person2 = create_person(2, "M", 18)  // Adult male roommate
-    local.person3 = create_person(3, "M", 18)  // Single male adult in a room
-    local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
-    local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
-    local.sectionContext3 = create_context_section(local.person3, local.data.products.section)
-    local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
-    local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
-    local.optionContext3 = create_context_option(local.person3, local.data.products.option_m, local.sectionContext3)
-    link_roommates(local.sectionContext1, local.optionContext1, local.optionContext2)
-    assign_person_group(local.sectionContext1, local.data.pm_group_m)
-    assign_person_group(local.sectionContext2, local.data.pm_group_m)
-    assign_person_group(local.sectionContext3, local.data.pm_group_m)
-
-    // Ensure the room has at least two available beds
-    local.room = create_room(local.data.products.mixed_room, 2)
-
-    // Link the persons as roommates
-    link_roommates(local.person1, local.person2)
+    local.person1 = create_person(1, "M")
+    local.sectionContext = create_context_section(local.person1, local.data.products.section)
+    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
+    assign_person_group(local.sectionContext, local.data.pm_group_m)
 
     return {
       products: local.data.products,
       pm_session: local.data.pm_session,
       pm_group_m: local.data.pm_group_m,
       person1: local.person1,
-      person2: local.person2,
-      person3: local.person3,
-      sectionContext1: local.sectionContext1,
-      sectionContext2: local.sectionContext2,
-      sectionContext3: local.sectionContext3,
-      optionContext1: local.optionContext1,
-      optionContext2: local.optionContext2,
-      optionContext3: local.optionContext3,
-      room: local.room
+      sectionContext: local.sectionContext,
+      optionContext: local.optionContext
     }
   }
+
+  // no_stairs
+  public struct function test_17() {
+    // session setup
+    local.data = setup_session()
+    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    // person/context setup
+    local.person1 = create_person(1, "M")
+    local.sectionContext = create_context_section(local.person1, local.data.products.section)
+    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
+    assign_person_group(local.sectionContext, local.data.pm_group_m)
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      person1: local.person1,
+      sectionContext: local.sectionContext,
+      optionContext: local.optionContext
+    }
+  }
+
+  // fridge
+  public struct function test_18() {
+    // session setup
+    local.data = setup_session()
+    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    // person/context setup
+    local.person1 = create_person(1, "M")
+    local.sectionContext = create_context_section(local.person1, local.data.products.section)
+    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
+    assign_person_group(local.sectionContext, local.data.pm_group_m)
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      person1: local.person1,
+      sectionContext: local.sectionContext,
+      optionContext: local.optionContext
+    }
+  }
+
+  // wheelchair + fridge before wheelchair
+  public struct function test_19() {
+    // session setup
+    local.data = setup_session()
+    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    // person/context setup
+    local.person1 = create_person(1, "M")
+    local.sectionContext = create_context_section(local.person1, local.data.products.section)
+    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
+    assign_person_group(local.sectionContext, local.data.pm_group_m)
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      person1: local.person1,
+      sectionContext: local.sectionContext,
+      optionContext: local.optionContext
+    }
+  }
+
+  // wheelchair before no_stairs + fridge
+  public struct function test_20() {
+    // session setup
+    local.data = setup_session()
+    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    // person/context setup
+    local.person1 = create_person(1, "M")
+    local.sectionContext = create_context_section(local.person1, local.data.products.section)
+    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
+    assign_person_group(local.sectionContext, local.data.pm_group_m)
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      person1: local.person1,
+      sectionContext: local.sectionContext,
+      optionContext: local.optionContext
+    }
+  }
+
+  // no_stairs + fridge before no_stairs
+  public struct function test_21() {
+    // session setup
+    local.data = setup_session()
+    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    // person/context setup
+    local.person1 = create_person(1, "M")
+    local.sectionContext = create_context_section(local.person1, local.data.products.section)
+    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
+    assign_person_group(local.sectionContext, local.data.pm_group_m)
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      person1: local.person1,
+      sectionContext: local.sectionContext,
+      optionContext: local.optionContext
+    }
+  }
+
+  // no_stairs before fridge
+  public struct function test_22() {
+    // session setup
+    local.data = setup_session()
+    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    // person/context setup
+    local.person1 = create_person(1, "M")
+    local.sectionContext = create_context_section(local.person1, local.data.products.section)
+    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
+    assign_person_group(local.sectionContext, local.data.pm_group_m)
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      person1: local.person1,
+      sectionContext: local.sectionContext,
+      optionContext: local.optionContext
+    }
+  }
+
+  // fridge before normal
+  public struct function test_23() {
+    // session setup
+    local.data = setup_session()
+    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    // person/context setup
+    local.person1 = create_person(1, "M")
+    local.sectionContext = create_context_section(local.person1, local.data.products.section)
+    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
+    assign_person_group(local.sectionContext, local.data.pm_group_m)
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      person1: local.person1,
+      sectionContext: local.sectionContext,
+      optionContext: local.optionContext
+    }
+  }
+
+  // wheelchair room with 2 beds, different groups, 1 wheelchair in each group
+  public struct function test_24() {
+    // session setup
+    local.data = setup_session()
+    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    // person/context setup
+    local.person1 = create_person(1, "M")
+    local.sectionContext = create_context_section(local.person1, local.data.products.section)
+    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
+    assign_person_group(local.sectionContext, local.data.pm_group_m)
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      person1: local.person1,
+      sectionContext: local.sectionContext,
+      optionContext: local.optionContext
+    }
+  }
+
+  // roommates, 1 with wheelchair and 1 with no_stairs, 1 room 2 beds, room is wheelchair
+  public struct function test_25() {
+    // session setup
+    local.data = setup_session()
+    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    // person/context setup
+    local.person1 = create_person(1, "M")
+    local.sectionContext = create_context_section(local.person1, local.data.products.section)
+    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
+    assign_person_group(local.sectionContext, local.data.pm_group_m)
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      person1: local.person1,
+      sectionContext: local.sectionContext,
+      optionContext: local.optionContext
+    }
+  }
+
+  // roommates, 1 with wheelchair and 1 with no_stairs, 1 room 2 beds, room is no_stairs (not placed)
+  public struct function test_26() {
+    // session setup
+    local.data = setup_session()
+    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    // person/context setup
+    local.person1 = create_person(1, "M")
+    local.sectionContext = create_context_section(local.person1, local.data.products.section)
+    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
+    assign_person_group(local.sectionContext, local.data.pm_group_m)
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      person1: local.person1,
+      sectionContext: local.sectionContext,
+      optionContext: local.optionContext
+    }
+  }
+
+  // wheelchair where the only open wheelchair beds are in a room with 2 different groups assigned (other group first)
+  public struct function test_27() {
+    // session setup
+    local.data = setup_session()
+    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    // person/context setup
+    local.person1 = create_person(1, "M")
+    local.sectionContext = create_context_section(local.person1, local.data.products.section)
+    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
+    assign_person_group(local.sectionContext, local.data.pm_group_m)
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      person1: local.person1,
+      sectionContext: local.sectionContext,
+      optionContext: local.optionContext
+    }
+  }
+
+  // roommates w/ an additional person session_linked to them, 2 rooms, 2 beds each
+  public struct function test_28() {
+    // session setup
+    local.data = setup_session()
+    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    // person/context setup
+    local.person1 = create_person(1, "M")
+    local.sectionContext = create_context_section(local.person1, local.data.products.section)
+    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
+    assign_person_group(local.sectionContext, local.data.pm_group_m)
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      person1: local.person1,
+      sectionContext: local.sectionContext,
+      optionContext: local.optionContext
+    }
+  }
+
+  // roommates w/ an additional person session_linked to them, 2 rooms, 2 beds each, 1 bed assigned to another group
+  public struct function test_29() {
+    // session setup
+    local.data = setup_session()
+    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    // person/context setup
+    local.person1 = create_person(1, "M")
+    local.sectionContext = create_context_section(local.person1, local.data.products.section)
+    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
+    assign_person_group(local.sectionContext, local.data.pm_group_m)
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      person1: local.person1,
+      sectionContext: local.sectionContext,
+      optionContext: local.optionContext
+    }
+  }
+
+  // roommates w/ an additional person session_linked to them, 2 rooms, 2 beds each, 2 beds (1 in each room) assigned to another group
+  public struct function test_30() {
+    // session setup
+    local.data = setup_session()
+    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    // person/context setup
+    local.person1 = create_person(1, "M")
+    local.sectionContext = create_context_section(local.person1, local.data.products.section)
+    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
+    assign_person_group(local.sectionContext, local.data.pm_group_m)
+
+    return {
+      products: local.data.products,
+      pm_session: local.data.pm_session,
+      pm_group_m: local.data.pm_group_m,
+      person1: local.person1,
+      sectionContext: local.sectionContext,
+      optionContext: local.optionContext
+    }
+  }
+
 
 }
