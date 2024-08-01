@@ -21,32 +21,32 @@ component threadSafe extends="o3.internal.cfc.model" {
     queryExecute("
       insert into product (MASTER_TYPE, PROGRAM, STATUS, SHORT_TITLE, TITLE, DEPARTMENT, PRODUCT_TYPE, INCLUDE_IN_ENROLLMENT_TOTAL, CREATED_BY)
       values ('Section', #variables.realProgram#, 'Active', '#variables.ticketName#_SECTION', '#variables.ticketName# Test Section', 'FSY', 'FSY', 'Y', '#variables.ticketName#')
-    ", {}, { datasource: variables.dsn.local, result: "local.section" });
+    ", {}, { datasource: variables.dsn.local, result: "local.section" })
     if (!local.section.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create section product", detail = serializeJSON(local.section))
 
     queryExecute("
       insert into product (MASTER_TYPE, PROGRAM, STATUS, SHORT_TITLE, TITLE, DEPARTMENT, PRODUCT_TYPE, INCLUDE_IN_ENROLLMENT_TOTAL, CREATED_BY, OPTION_TYPE, HOUSING_TYPE)
       values ('Option', #variables.realProgram#, 'Active', '#variables.ticketName#_OPTION_M', '#variables.ticketName# Test Option', 'FSY', 'FSY', 'Y', '#variables.ticketName#', 'Housing', 'Male')
-    ", {}, { datasource: variables.dsn.local, result: "local.option_m" });
+    ", {}, { datasource: variables.dsn.local, result: "local.option_m" })
     if (!local.option_m.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create option product", detail = serializeJSON(local.option_m))
     queryExecute("
       insert into product (MASTER_TYPE, PROGRAM, STATUS, SHORT_TITLE, TITLE, DEPARTMENT, PRODUCT_TYPE, INCLUDE_IN_ENROLLMENT_TOTAL, CREATED_BY, OPTION_TYPE, HOUSING_TYPE)
       values ('Option', #variables.realProgram#, 'Active', '#variables.ticketName#_OPTION_F', '#variables.ticketName# Test Option', 'FSY', 'FSY', 'Y', '#variables.ticketName#', 'Housing', 'Female')
-    ", {}, { datasource: variables.dsn.local, result: "local.option_f" });
+    ", {}, { datasource: variables.dsn.local, result: "local.option_f" })
     if (!local.option_f.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create option product", detail = serializeJSON(local.option_f))
 
     queryExecute("
       insert into option_group (SECTION, NAME, MIN_CHOICE, MAX_CHOICE, CREATED_BY)
       values (#local.section.generatedKey#, 'Housing', 1, 1, '#variables.ticketName#')
-    ", {}, { datasource: variables.dsn.local });
+    ", {}, { datasource: variables.dsn.local })
     queryExecute("
       insert into option_item (SECTION, NAME, ITEM, CREATED_BY)
       values (#local.section.generatedKey#, 'Housing', #local.option_m.generatedKey#, '#variables.ticketName#')
-    ", {}, { datasource: variables.dsn.local });
+    ", {}, { datasource: variables.dsn.local })
     queryExecute("
       insert into option_item (SECTION, NAME, ITEM, CREATED_BY)
       values (#local.section.generatedKey#, 'Housing', #local.option_f.generatedKey#, '#variables.ticketName#')
-    ", {}, { datasource: variables.dsn.local });
+    ", {}, { datasource: variables.dsn.local })
 
     return { section: local.section.generatedKey, option_m: local.option_m.generatedKey, option_f: local.option_f.generatedKey };
   }
@@ -56,17 +56,17 @@ component threadSafe extends="o3.internal.cfc.model" {
     queryExecute("
       insert into pm_session (TITLE, PRODUCT, START_DATE, END_DATE, SESSION_TYPE, PM_LOCATION, PM_SELECTOR_SET_TEMPLATE, CREATED_BY)
       values ('#variables.ticketName# Test Session', :product, '2024-08-04', '2024-08-10', 'FSY', 2, #variables.pm_selector_set_template#, '#variables.ticketName#')
-    ", {product: arguments.section}, { datasource: variables.dsn.local, result: "local.pm_session" });
+    ", {product: arguments.section}, { datasource: variables.dsn.local, result: "local.pm_session" })
     if (!local.pm_session.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create pm_session", detail = serializeJSON(local.pm_session))
 
     queryExecute("
       insert into pm_selector_product (PM_SESSION, PM_SELECTOR, PRODUCT, CREATED_BY)
       values (#local.pm_session.generatedKey#, #variables.selector_m#, #arguments.option_m#, '#variables.ticketName#')
-    ", {}, { datasource: variables.dsn.local });
+    ", {}, { datasource: variables.dsn.local })
     queryExecute("
       insert into pm_selector_product (PM_SESSION, PM_SELECTOR, PRODUCT, CREATED_BY)
       values (#local.pm_session.generatedKey#, #variables.selector_f#, #arguments.option_f#, '#variables.ticketName#')
-    ", {}, { datasource: variables.dsn.local });
+    ", {}, { datasource: variables.dsn.local })
 
     return local.pm_session.generatedKey
   }
@@ -76,26 +76,26 @@ component threadSafe extends="o3.internal.cfc.model" {
     queryExecute("
       insert into pm_group (PM_SESSION, GROUP_NUMBER, SIZE, CREATED_BY)
       values (#arguments.pm_session_id#, #arguments.group_number#, #arguments.size#, '#variables.ticketName#')
-    ", {}, { datasource: variables.dsn.local, result: "local.pm_group" });
+    ", {}, { datasource: variables.dsn.local, result: "local.pm_group" })
     if (!local.pm_group.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create pm_group", detail = serializeJSON(local.pm_group))
 
     queryExecute("
       insert into pm_counselor (PM_SESSION, TYPE, NUMBER, GENDER, CREATED_BY)
       values (#arguments.pm_session_id#, 'Counselor', #arguments.group_number#, '#arguments.gender#', '#variables.ticketName#')
-    ", {}, { datasource: variables.dsn.local, result: "local.pm_counselor" });
+    ", {}, { datasource: variables.dsn.local, result: "local.pm_counselor" })
     if (!local.pm_counselor.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create pm_counselor", detail = serializeJSON(local.pm_counselor))
 
     queryExecute("
       insert into pm_group_selector (PM_GROUP, PM_SELECTOR, CREATED_BY)
       values (#local.pm_group.generatedKey#, #arguments.pm_selector#, '#variables.ticketName#')
-    ", {}, { datasource: variables.dsn.local, result: "local.pm_group_selector" });
+    ", {}, { datasource: variables.dsn.local, result: "local.pm_group_selector" })
     if (local.pm_group_selector.recordCount == 0) throw(type = "ds.error", message = "Failed to create pm_group_selector", detail = serializeJSON(local.pm_group_selector))
 
     // connect
     queryExecute("
       update pm_group set pm_counselor = #local.pm_counselor.generatedKey#, updated_by = '#variables.ticketName#'
       where pm_group_id = #local.pm_group.generatedKey#
-    ", {}, { datasource: variables.dsn.local });
+    ", {}, { datasource: variables.dsn.local })
 
     return local.pm_group.generatedKey
   }
@@ -105,8 +105,8 @@ component threadSafe extends="o3.internal.cfc.model" {
     queryExecute("
       insert into person (FIRST_NAME, LAST_NAME, GENDER, BIRTHDATE, LDS_ACCOUNT_ID, CREATED_BY)
       values ('#arguments.first_name#', 'Lasterson', '#arguments.gender#', '#2024 - arguments.age#-01-01', #arguments.lds_account_id#, '#variables.ticketName#')
-    ", {}, { datasource: variables.dsn.local, result: "local.person" });
-    if (!local.person.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create person", detail = serializeJSON(local.person));
+    ", {}, { datasource: variables.dsn.local, result: "local.person" })
+    if (!local.person.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create person", detail = serializeJSON(local.person))
 
     return local.person.generatedKey;
   }
@@ -116,8 +116,8 @@ component threadSafe extends="o3.internal.cfc.model" {
     queryExecute("
       insert into context (PERSON, PRODUCT, CONTEXT_TYPE, STATUS)
       values (#arguments.personID#, #arguments.programID#, 'Program', 'Active')
-    ", {}, { datasource: variables.dsn.local, result: "local.context" });
-    if (!local.context.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create program context", detail = serializeJSON(local.context));
+    ", {}, { datasource: variables.dsn.local, result: "local.context" })
+    if (!local.context.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create program context", detail = serializeJSON(local.context))
 
     return local.context.generatedKey;
   }
@@ -126,8 +126,8 @@ component threadSafe extends="o3.internal.cfc.model" {
     queryExecute("
       insert into context (PERSON, PRODUCT, CONTEXT_TYPE, STATUS, CREATED_BY)
       values (#arguments.personID#, #arguments.sectionID#, 'Enrollment', 'Active', '#variables.ticketName#')
-    ", {}, { datasource: variables.dsn.local, result: "local.context" });
-    if (!local.context.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create section context", detail = serializeJSON(local.context));
+    ", {}, { datasource: variables.dsn.local, result: "local.context" })
+    if (!local.context.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create section context", detail = serializeJSON(local.context))
 
     return local.context.generatedKey;
   }
@@ -136,8 +136,8 @@ component threadSafe extends="o3.internal.cfc.model" {
     queryExecute("
       insert into context (PERSON, PRODUCT, CONTEXT_TYPE, CHOICE_FOR, STATUS, CREATED_BY)
       values (#arguments.personID#, #arguments.optionProductID#, 'Enrollment', #arguments.sectionContext#, 'Active', '#variables.ticketName#')
-    ", {}, { datasource: variables.dsn.local, result: "local.context" });
-    if (!local.context.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create option context", detail = serializeJSON(local.context));
+    ", {}, { datasource: variables.dsn.local, result: "local.context" })
+    if (!local.context.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create option context", detail = serializeJSON(local.context))
 
     return local.context.generatedKey;
   }
@@ -147,8 +147,8 @@ component threadSafe extends="o3.internal.cfc.model" {
     queryExecute("
       insert into accommodation (CONTEXT, TYPE, STATUS, CREATED_BY)
       values (#arguments.contextID#, '#arguments.accommodationType#', 'Approved', '#variables.ticketName#')
-    ", {}, { datasource: variables.dsn.local, result: "local.accommodation" });
-    if (local.accommodation.recordCount == 0) throw(type = "ds.error", message = "Failed to create accommodation", detail = serializeJSON(local.accommodation));
+    ", {}, { datasource: variables.dsn.local, result: "local.accommodation" })
+    if (local.accommodation.recordCount == 0) throw(type = "ds.error", message = "Failed to create accommodation", detail = serializeJSON(local.accommodation))
   }
 
   // create pm_housing
@@ -170,8 +170,8 @@ component threadSafe extends="o3.internal.cfc.model" {
       )
     ", {
       apartment: {value: arguments.keyExists("apartment") ? arguments.apartment : "", null: !arguments.keyExists("apartment")}
-    }, { datasource: variables.dsn.local, result: "local.pm_housing" });
-    if (!local.pm_housing.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create pm_housing", detail = serializeJSON(local.pm_housing));
+    }, { datasource: variables.dsn.local, result: "local.pm_housing" })
+    if (!local.pm_housing.keyExists("generatedKey")) throw(type = "ds.error", message = "Failed to create pm_housing", detail = serializeJSON(local.pm_housing))
 
     return local.pm_housing.generatedKey;
   }
@@ -181,7 +181,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     queryExecute("
       update context set pm_group = #arguments.pm_group#, updated_by = '#variables.ticketName#'
       where context_id = #arguments.sectionContext#
-    ", {}, { datasource: variables.dsn.local });
+    ", {}, { datasource: variables.dsn.local })
   }
 
   // assign housing to groups
@@ -189,7 +189,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     queryExecute("
       update pm_housing set pm_group = #arguments.pm_group#, updated_by = '#variables.ticketName#'
       where pm_housing_id = #arguments.pm_housing_id#
-    ", {}, { datasource: variables.dsn.local });
+    ", {}, { datasource: variables.dsn.local })
   }
 
   // place people in beds (those that should be there prior to the test running to place the test user(s))
@@ -197,22 +197,33 @@ component threadSafe extends="o3.internal.cfc.model" {
     queryExecute("
       update pm_housing set context = #arguments.sectionContext#, updated_by = '#variables.ticketName#'
       where pm_housing_id = #arguments.pm_housing_id#
-    ", {}, { datasource: variables.dsn.local });
+    ", {}, { datasource: variables.dsn.local })
   }
 
-  public void function link_roommates(required numeric session_link, required numeric housing1, required numeric housing2) {
+  public void function link_roommates(required numeric session_link, required numeric housing1, required numeric housing2, numeric housing3) {
     queryExecute("
       update context set session_link = #arguments.session_link#, roommate_context = #arguments.housing2#, updated_by = '#variables.ticketName#'
       where context_id = #arguments.housing1#
-    ", {}, { datasource: variables.dsn.local });
+    ", {}, { datasource: variables.dsn.local })
 
     queryExecute("
       update context set session_link = #arguments.session_link#, roommate_context = #arguments.housing1#, updated_by = '#variables.ticketName#'
       where context_id = #arguments.housing2#
-    ", {}, { datasource: variables.dsn.local });
+    ", {}, { datasource: variables.dsn.local })
+
+    if (arguments.keyExists("housing3")) {
+      // assumes that housing1's person is the requester
+      queryExecute("
+      update context set session_link = #arguments.session_link#, updated_by = '#variables.ticketName#'
+      where context_id = #arguments.housing3#
+    ", {}, { datasource: variables.dsn.local })
+    }
   }
 
+  // //////////
   // TEST CASES
+  // //////////
+
   /*
     run them like so, in scratch:
 
@@ -238,7 +249,7 @@ component threadSafe extends="o3.internal.cfc.model" {
   // utils
 
   public void function deleteRecord(required string table) {
-    queryExecute("delete #arguments.table# where created_by = '#variables.ticketName#'", {}, { datasource: variables.dsn.local });
+    queryExecute("delete #arguments.table# where created_by = '#variables.ticketName#'", {}, { datasource: variables.dsn.local })
   }
 
   public struct function setup_session() {
@@ -827,8 +838,8 @@ component threadSafe extends="o3.internal.cfc.model" {
     assign_housing_group(local.pm_housing_id_2, local.data.pm_group_m)
 
     // person/context setup
-    local.person1 = create_person(1, "M", 15, "Group One")
-    local.person2 = create_person(2, "M", 15, "Group Two")
+    local.person1 = create_person(1, "M", 15, "P1")
+    local.person2 = create_person(2, "M", 15, "P2")
     local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
     local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
     local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
@@ -864,7 +875,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.sectionContext = create_context_section(local.person1, local.data.products.section)
     local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
     assign_person_group(local.sectionContext, local.data.pm_group_m)
-    create_accommodation(local.sectionContext, "Wheelchair");
+    create_accommodation(local.sectionContext, "Wheelchair")
 
     return {
       products: local.data.products,
@@ -889,7 +900,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.sectionContext = create_context_section(local.person1, local.data.products.section)
     local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
     assign_person_group(local.sectionContext, local.data.pm_group_m)
-    create_accommodation(local.sectionContext, "No Stairs");
+    create_accommodation(local.sectionContext, "No Stairs")
 
     return {
       products: local.data.products,
@@ -931,8 +942,8 @@ component threadSafe extends="o3.internal.cfc.model" {
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
     assign_person_group(local.sectionContext3, local.data.pm_group_m)
     assign_person_group(local.sectionContext4, local.data.pm_group_m)
-    create_accommodation(local.sectionContext2, "Fridge");
-    create_accommodation(local.sectionContext4, "Fridge");
+    create_accommodation(local.sectionContext2, "Fridge")
+    create_accommodation(local.sectionContext4, "Fridge")
 
     return {
       products: local.data.products,
@@ -970,9 +981,9 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
-    create_accommodation(local.sectionContext2, "Wheelchair");
-    create_accommodation(local.sectionContext2, "Fridge");
-    create_accommodation(local.sectionContext1, "Wheelchair");
+    create_accommodation(local.sectionContext2, "Wheelchair")
+    create_accommodation(local.sectionContext2, "Fridge")
+    create_accommodation(local.sectionContext1, "Wheelchair")
 
     return {
       products: local.data.products,
@@ -1004,9 +1015,9 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
-    create_accommodation(local.sectionContext2, "Wheelchair");
-    create_accommodation(local.sectionContext1, "No Stairs");
-    create_accommodation(local.sectionContext1, "Fridge");
+    create_accommodation(local.sectionContext2, "Wheelchair")
+    create_accommodation(local.sectionContext1, "No Stairs")
+    create_accommodation(local.sectionContext1, "Fridge")
 
     return {
       products: local.data.products,
@@ -1038,9 +1049,9 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
-    create_accommodation(local.sectionContext2, "Fridge");
-    create_accommodation(local.sectionContext2, "No Stairs");
-    create_accommodation(local.sectionContext1, "No Stairs");
+    create_accommodation(local.sectionContext2, "Fridge")
+    create_accommodation(local.sectionContext2, "No Stairs")
+    create_accommodation(local.sectionContext1, "No Stairs")
 
     return {
       products: local.data.products,
@@ -1072,8 +1083,8 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
-    create_accommodation(local.sectionContext2, "No Stairs");
-    create_accommodation(local.sectionContext1, "Fridge");
+    create_accommodation(local.sectionContext2, "No Stairs")
+    create_accommodation(local.sectionContext1, "Fridge")
 
     return {
       products: local.data.products,
@@ -1105,7 +1116,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
     assign_person_group(local.sectionContext1, local.data.pm_group_m)
     assign_person_group(local.sectionContext2, local.data.pm_group_m)
-    create_accommodation(local.sectionContext2, "Fridge");
+    create_accommodation(local.sectionContext2, "Fridge")
 
     return {
       products: local.data.products,
@@ -1120,83 +1131,130 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // wheelchair room with 2 beds, different groups, 1 wheelchair in each group
+  // ✅ wheelchair room with 2 beds, different groups, 1 wheelchair in each group
   public struct function test_24() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
-    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.other_group_m = create_pm_group(local.data.pm_session, 2, "M")
+    local.pm_housing_id_1 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A", wheelchair = true)
+    assign_housing_group(local.pm_housing_id_1, local.other_group_m)
+    local.pm_housing_id_2 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B", wheelchair = true)
+    assign_housing_group(local.pm_housing_id_2, local.data.pm_group_m)
+
     // person/context setup
-    local.person1 = create_person(1, "M")
-    local.sectionContext = create_context_section(local.person1, local.data.products.section)
-    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
-    assign_person_group(local.sectionContext, local.data.pm_group_m)
+    local.person1 = create_person(1, "M", 15, "P1")
+    local.person2 = create_person(2, "M", 15, "P2")
+    local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
+    local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
+    local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
+    local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    assign_person_group(local.sectionContext1, local.data.pm_group_m)
+    assign_person_group(local.sectionContext2, local.other_group_m)
+    create_accommodation(local.sectionContext1, "Wheelchair")
+    create_accommodation(local.sectionContext2, "Wheelchair")
+
 
     return {
       products: local.data.products,
       pm_session: local.data.pm_session,
       pm_group_m: local.data.pm_group_m,
+      other_group_m: local.other_group_m,
       person1: local.person1,
-      sectionContext: local.sectionContext,
-      optionContext: local.optionContext
+      person2: local.person2,
+      sectionContext1: local.sectionContext1,
+      sectionContext2: local.sectionContext2,
+      optionContext1: local.optionContext1,
+      optionContext2: local.optionContext2
     }
   }
 
-  // roommates, 1 with wheelchair and 1 with no_stairs, 1 room 2 beds, room is wheelchair
+  // ✅ roommates, 1 with wheelchair and 1 with no_stairs, 1 room 2 beds, room is wheelchair
   public struct function test_25() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
-    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id_1 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A", wheelchair = true)
+    assign_housing_group(local.pm_housing_id_1, local.data.pm_group_m)
+    local.pm_housing_id_2 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B", wheelchair = true)
+    assign_housing_group(local.pm_housing_id_2, local.data.pm_group_m)
+
     // person/context setup
-    local.person1 = create_person(1, "M")
-    local.sectionContext = create_context_section(local.person1, local.data.products.section)
-    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
-    assign_person_group(local.sectionContext, local.data.pm_group_m)
+    local.person1 = create_person(1, "M", 15, "P1")
+    local.person2 = create_person(2, "M", 15, "P2")
+    local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
+    local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
+    local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
+    local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    assign_person_group(local.sectionContext1, local.data.pm_group_m)
+    assign_person_group(local.sectionContext2, local.data.pm_group_m)
+    link_roommates(local.sectionContext1, local.optionContext1, local.optionContext2)
+    create_accommodation(local.sectionContext1, "No Stairs")
+    create_accommodation(local.sectionContext2, "Wheelchair")
+
 
     return {
       products: local.data.products,
       pm_session: local.data.pm_session,
       pm_group_m: local.data.pm_group_m,
       person1: local.person1,
-      sectionContext: local.sectionContext,
-      optionContext: local.optionContext
+      person2: local.person2,
+      sectionContext1: local.sectionContext1,
+      sectionContext2: local.sectionContext2,
+      optionContext1: local.optionContext1,
+      optionContext2: local.optionContext2
     }
   }
 
-  // roommates, 1 with wheelchair and 1 with no_stairs, 1 room 2 beds, room is no_stairs (not placed)
+  // ✅ roommates, 1 with wheelchair and 1 with no_stairs, 1 room 2 beds, room is no_stairs (not placed)
   public struct function test_26() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
-    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id_1 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A", no_stairs = true)
+    assign_housing_group(local.pm_housing_id_1, local.data.pm_group_m)
+    local.pm_housing_id_2 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B", no_stairs = true)
+    assign_housing_group(local.pm_housing_id_2, local.data.pm_group_m)
+
     // person/context setup
-    local.person1 = create_person(1, "M")
-    local.sectionContext = create_context_section(local.person1, local.data.products.section)
-    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
-    assign_person_group(local.sectionContext, local.data.pm_group_m)
+    local.person1 = create_person(1, "M", 15, "P1")
+    local.person2 = create_person(2, "M", 15, "P2")
+    local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
+    local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
+    local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
+    local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    assign_person_group(local.sectionContext1, local.data.pm_group_m)
+    assign_person_group(local.sectionContext2, local.data.pm_group_m)
+    link_roommates(local.sectionContext1, local.optionContext1, local.optionContext2)
+    create_accommodation(local.sectionContext1, "No Stairs")
+    create_accommodation(local.sectionContext2, "Wheelchair")
+
 
     return {
       products: local.data.products,
       pm_session: local.data.pm_session,
       pm_group_m: local.data.pm_group_m,
       person1: local.person1,
-      sectionContext: local.sectionContext,
-      optionContext: local.optionContext
+      person2: local.person2,
+      sectionContext1: local.sectionContext1,
+      sectionContext2: local.sectionContext2,
+      optionContext1: local.optionContext1,
+      optionContext2: local.optionContext2
     }
   }
 
-  // wheelchair where the only open wheelchair beds are in a room with 2 different groups assigned (other group first)
+  // ✅ wheelchair where the only open wheelchair beds are in a room with 2 different groups assigned (other group first)
   public struct function test_27() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
-    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.other_group_m = create_pm_group(local.data.pm_session, 2, "M")
+    local.pm_housing_id_1 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "A", wheelchair = true)
+    assign_housing_group(local.pm_housing_id_1, local.other_group_m)
+    local.pm_housing_id_2 = create_pm_housing(pm_session_id = local.data.pm_session, bed = "B", wheelchair = true)
+    assign_housing_group(local.pm_housing_id_2, local.data.pm_group_m)
     // person/context setup
     local.person1 = create_person(1, "M")
     local.sectionContext = create_context_section(local.person1, local.data.products.section)
     local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
     assign_person_group(local.sectionContext, local.data.pm_group_m)
+    create_accommodation(local.sectionContext, "Wheelchair")
 
     return {
       products: local.data.products,
@@ -1208,71 +1266,137 @@ component threadSafe extends="o3.internal.cfc.model" {
     }
   }
 
-  // roommates w/ an additional person session_linked to them, 2 rooms, 2 beds each
+  // ✅ roommates w/ an additional person session_linked to them, 2 rooms, 2 beds each
   public struct function test_28() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, room = 101, bed = "A")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, room = 101, bed = "B")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, room = 102, bed = "A")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, room = 102, bed = "B")
     assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
     // person/context setup
-    local.person1 = create_person(1, "M")
-    local.sectionContext = create_context_section(local.person1, local.data.products.section)
-    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
-    assign_person_group(local.sectionContext, local.data.pm_group_m)
+    local.person1 = create_person(1, "M", 15)
+    local.person2 = create_person(2, "M", 15)
+    local.person3 = create_person(3, "M", 18)
+    local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
+    local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
+    local.sectionContext3 = create_context_section(local.person3, local.data.products.section)
+    local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
+    local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    local.optionContext3 = create_context_option(local.person3, local.data.products.option_m, local.sectionContext3)
+    link_roommates(local.sectionContext1, local.optionContext1, local.optionContext2, local.optionContext3)
+    assign_person_group(local.sectionContext1, local.data.pm_group_m)
+    assign_person_group(local.sectionContext2, local.data.pm_group_m)
+    assign_person_group(local.sectionContext3, local.data.pm_group_m)
+    create_accommodation(local.sectionContext1, "Additional Person")
 
     return {
       products: local.data.products,
       pm_session: local.data.pm_session,
       pm_group_m: local.data.pm_group_m,
       person1: local.person1,
-      sectionContext: local.sectionContext,
-      optionContext: local.optionContext
+      person2: local.person2,
+      person3: local.person3,
+      sectionContext1: local.sectionContext1,
+      sectionContext2: local.sectionContext2,
+      sectionContext3: local.sectionContext3,
+      optionContext1: local.optionContext1,
+      optionContext2: local.optionContext2,
+      optionContext3: local.optionContext3
     }
   }
 
-  // roommates w/ an additional person session_linked to them, 2 rooms, 2 beds each, 1 bed assigned to another group
+  // ✅ roommates w/ an additional person session_linked to them, 2 rooms, 2 beds each, 1 bed assigned to another group, but it doesn't interrupt a set of 3 contiguous beds for the group the trio is in
   public struct function test_29() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    local.other_group_m = create_pm_group(local.data.pm_session, 2, "M")
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, room = 101, bed = "A")
+    assign_housing_group(local.pm_housing_id, local.other_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, room = 101, bed = "B")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, room = 102, bed = "A")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, room = 102, bed = "B")
     assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
     // person/context setup
-    local.person1 = create_person(1, "M")
-    local.sectionContext = create_context_section(local.person1, local.data.products.section)
-    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
-    assign_person_group(local.sectionContext, local.data.pm_group_m)
+    local.person1 = create_person(1, "M", 15)
+    local.person2 = create_person(2, "M", 15)
+    local.person3 = create_person(3, "M", 15)
+    local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
+    local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
+    local.sectionContext3 = create_context_section(local.person3, local.data.products.section)
+    local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
+    local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    local.optionContext3 = create_context_option(local.person3, local.data.products.option_m, local.sectionContext3)
+    link_roommates(local.sectionContext1, local.optionContext1, local.optionContext2, local.optionContext3)
+    assign_person_group(local.sectionContext1, local.data.pm_group_m)
+    assign_person_group(local.sectionContext2, local.data.pm_group_m)
+    assign_person_group(local.sectionContext3, local.data.pm_group_m)
+    create_accommodation(local.sectionContext1, "Additional Person")
 
     return {
       products: local.data.products,
       pm_session: local.data.pm_session,
       pm_group_m: local.data.pm_group_m,
       person1: local.person1,
-      sectionContext: local.sectionContext,
-      optionContext: local.optionContext
+      person2: local.person2,
+      person3: local.person3,
+      sectionContext1: local.sectionContext1,
+      sectionContext2: local.sectionContext2,
+      sectionContext3: local.sectionContext3,
+      optionContext1: local.optionContext1,
+      optionContext2: local.optionContext2,
+      optionContext3: local.optionContext3
     }
   }
 
-  // roommates w/ an additional person session_linked to them, 2 rooms, 2 beds each, 2 beds (1 in each room) assigned to another group
+  // ✅ roommates w/ an additional person session_linked to them, 2 rooms, 2 beds each, 1 bed assigned to another group, but it interrupts a set of 3 contiguous beds for the group the trio is in (not placed)
   public struct function test_30() {
     // session setup
     local.data = setup_session()
-    local.pm_housing_id = create_pm_housing(local.data.pm_session)
+    local.other_group_m = create_pm_group(local.data.pm_session, 2, "M")
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, room = 101, bed = "A")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, room = 101, bed = "B")
+    assign_housing_group(local.pm_housing_id, local.other_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, room = 102, bed = "A")
+    assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
+    local.pm_housing_id = create_pm_housing(pm_session_id = local.data.pm_session, room = 102, bed = "B")
     assign_housing_group(local.pm_housing_id, local.data.pm_group_m)
     // person/context setup
-    local.person1 = create_person(1, "M")
-    local.sectionContext = create_context_section(local.person1, local.data.products.section)
-    local.optionContext = create_context_option(local.person1, local.data.products.option_m, local.sectionContext)
-    assign_person_group(local.sectionContext, local.data.pm_group_m)
+    local.person1 = create_person(1, "M", 15)
+    local.person2 = create_person(2, "M", 15)
+    local.person3 = create_person(3, "M", 15)
+    local.sectionContext1 = create_context_section(local.person1, local.data.products.section)
+    local.sectionContext2 = create_context_section(local.person2, local.data.products.section)
+    local.sectionContext3 = create_context_section(local.person3, local.data.products.section)
+    local.optionContext1 = create_context_option(local.person1, local.data.products.option_m, local.sectionContext1)
+    local.optionContext2 = create_context_option(local.person2, local.data.products.option_m, local.sectionContext2)
+    local.optionContext3 = create_context_option(local.person3, local.data.products.option_m, local.sectionContext3)
+    link_roommates(local.sectionContext1, local.optionContext1, local.optionContext2, local.optionContext3)
+    assign_person_group(local.sectionContext1, local.data.pm_group_m)
+    assign_person_group(local.sectionContext2, local.data.pm_group_m)
+    assign_person_group(local.sectionContext3, local.data.pm_group_m)
+    create_accommodation(local.sectionContext1, "Additional Person")
 
     return {
       products: local.data.products,
       pm_session: local.data.pm_session,
       pm_group_m: local.data.pm_group_m,
       person1: local.person1,
-      sectionContext: local.sectionContext,
-      optionContext: local.optionContext
+      person2: local.person2,
+      person3: local.person3,
+      sectionContext1: local.sectionContext1,
+      sectionContext2: local.sectionContext2,
+      sectionContext3: local.sectionContext3,
+      optionContext1: local.optionContext1,
+      optionContext2: local.optionContext2,
+      optionContext3: local.optionContext3
     }
   }
-
-
 }
