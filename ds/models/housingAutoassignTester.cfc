@@ -274,7 +274,7 @@ component threadSafe extends="o3.internal.cfc.model" {
     deleteRecord("pm_group")
     deleteRecord("pm_counselor")
     deleteRecord("pm_selector_product")
-    deleteRecord("pm_session")
+    deleteRecord("pm_session") // will error. rebuild your db, changing the trigger to not care about updated_by when deleting pm_session records.  Change `ELSE -- Update only section` to `ELSE IF NOT EXISTS (SELECT 1 FROM deleted) -- Update only section`
     deleteRecord("option_item")
     deleteRecord("option_group")
     deleteRecord("product")
