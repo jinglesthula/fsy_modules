@@ -5,10 +5,24 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 	variables.dsn.scheduler = variables.dsn.local
 	variables.dsn.prereg = variables.dsn.prod
-	variables.realProgram = 80000082
-	variables.trainingProgram = structKeyExists(application, "trainingProgram") ? application.trainingProgram : 80001055
-	variables.ticket = "FSY-1511"
+	variables.realProgram = 80001114
+	variables.trainingProgram = structKeyExists(application, "trainingProgram") ? application.trainingProgram : 80061378
+	variables.ticket = "FSY-2883"
 	variables.ticketName = reReplace(variables.ticket, "-", "_", "all")
+	variables.existingTrainingSectionCN = queryExecute("
+		-- get the earliest non-core training session
+		select TOP 1 pm_session_id
+		from pm_session
+			inner join pm_location on pm_location = pm_location_id
+			inner join product on product = product_id
+		where program = :program
+			and session_type = 'FSY Training'
+		order by pm_session.start_date
+	", { program = variables.trainingProgram }, { datasource: variables.dsn.local }).pm_session_id;
+	variables.sessions = {
+		oregon = queryExecute("SELECT pm_session_id FROM pm_session WHERE title = 'FSY OR Monmouth 02'", {}, { datasource: variables.dsn.local }).pm_session_id,
+		provo = ""
+	};
 
 	public query function countStarted() {
 		return QueryExecute(
@@ -2387,7 +2401,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		//teardown()
 	}
 
-	private void function teardown() {
+	public void function teardown() {
 		application.progress.append({ currentStep: "teardown", tick: getTickCount() })
 
 		QueryExecute("
@@ -2400,7 +2414,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		QueryExecute("delete session_preference where created_by = :created_by", { created_by: variables.ticket }, { datasource: variables.dsn.local } );
 		QueryExecute("delete pm_location where created_by = :created_by", { created_by: variables.ticket }, { datasource: variables.dsn.local } );
 		QueryExecute("delete event where event_object = 'CONTEXT' and event_object_id in (select context_id from context where person in (select person_id from person where first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#'))", {}, { datasource: variables.dsn.local } );
-		QueryExecute("delete context where product in (select product_id from product where short_title like '%_#variables.ticketName#')", {}, { datasource: variables.dsn.local } );
+		QueryExecute("delete context where product in (select product_id from product where short_title like '%_#variables.ticketName#') or person in (select person_id from person where first_name = 'First_#variables.ticketName#')", {}, { datasource: variables.dsn.local } );
 		QueryExecute("delete fsy_unit where created_by = :created_by", { created_by: variables.ticket }, { datasource: variables.dsn.local } );
 		QueryExecute("delete person where first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#'", {}, { datasource: variables.dsn.local } );
 		QueryExecute("delete option_item where section in (select product_id from product where short_title like 'Section_%_#variables.ticketName#')", {}, { datasource: variables.dsn.local } );
@@ -2489,17 +2503,17 @@ component threadSafe extends="o3.internal.cfc.model" {
 	}
 
 	variables.dates = {
-		core: '2024-05-15', // 20 training only (for everyone other than CNs; all other trainings are for CNs only)
-		week0: '2024-05-22', // 21 - training only; week starts 5/19, but the training is on 5/22. So there.
-		week1: '2024-05-26', // 22 - first week of regular sessions
-		week2: '2024-06-02', // 23
-		week3: '2024-06-09', // 24
-		week4: '2024-06-16', // 25 - last week of CN trainings
-		week5: '2024-06-23', // 26
-		week6: '2024-06-30', // 27
-		week7: '2024-07-07', // 28
-		week8: '2024-07-14', // 29
-		week9: '2024-07-21'  // 30
+		core: '2025-05-12', // 20 training only (for everyone other than CNs; all other trainings are for CNs only)
+		week0: '2025-05-18', // 21 - training only; week starts 5/19, but the training is on 5/22. So there.
+		week1: '2025-05-25', // 22 - first week of regular sessions
+		week2: '2025-06-01', // 23
+		week3: '2025-06-08', // 24
+		week4: '2025-06-15', // 25 - last week of CN trainings
+		week5: '2025-06-22', // 26
+		week6: '2025-06-29', // 27
+		week7: '2025-07-06', // 28
+		week8: '2025-07-13', // 29
+		week9: '2025-07-20'  // 30
 	}
 
 	// Utils/helper functions
@@ -2514,7 +2528,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				FROM context
 					INNER JOIN product on product = product_id
 				WHERE (
-					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
+					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPE.STAFF.HIRES')
 					OR context_type = 'Hired Staff'
 				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
@@ -2528,7 +2542,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				FROM context
 					INNER JOIN product on product = product_id
 				WHERE (
-					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
+					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPE.STAFF.HIRES')
 					OR context_type = 'Hired Staff'
 				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
@@ -2542,7 +2556,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				FROM context
 					INNER JOIN product on product = product_id
 				WHERE (
-					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
+					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPE.STAFF.HIRES')
 					OR context_type = 'Hired Staff'
 				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
@@ -2556,7 +2570,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				FROM context
 					INNER JOIN product on product = product_id
 				WHERE (
-					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
+					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPE.STAFF.HIRES')
 					OR context_type = 'Hired Staff'
 				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
@@ -2570,7 +2584,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				FROM context
 					INNER JOIN product on product = product_id
 				WHERE (
-					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
+					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPE.STAFF.HIRES')
 					OR context_type = 'Hired Staff'
 				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
@@ -2584,7 +2598,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				FROM context
 					INNER JOIN product on product = product_id
 				WHERE (
-					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
+					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPE.STAFF.HIRES')
 					OR context_type = 'Hired Staff'
 				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
@@ -2598,8 +2612,8 @@ component threadSafe extends="o3.internal.cfc.model" {
 				FROM context
 					INNER JOIN product on product = product_id
 				WHERE (
-					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
-					OR context_type = 'Hired Staff'
+					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPE.STAFF.HIRES')
+					OR context_type IN ('Hired Staff', 'Enrollment')
 				)
 					AND #variables.realProgram# IN (product.program, product.product_id)
 					AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
@@ -2612,7 +2626,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 				FROM context
 					INNER JOIN product on product = product_id
 				WHERE (
-					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
+					context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPE.STAFF.HIRES')
 					OR context_type IN ('Hired Staff', 'Enrollment')
 				)
 					AND (#variables.realProgram# IN (product.program, product.product_id) OR #variables.trainingProgram# IN (product.program, product.product_id))
@@ -2630,7 +2644,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			SELECT COUNT(context_id) AS total
 			FROM context
 				INNER JOIN product on product = product_id
-			WHERE context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPES' AND notes LIKE '%hires%')
+			WHERE context_type IN (SELECT value FROM cntl_value WHERE control = 'ADULT_CONTEXT_TYPE.STAFF.HIRES')
 				AND product.program = #variables.realProgram#
 				AND context.status = 'Active'
 				AND context.person IN (SELECT person_id FROM person WHERE first_name = 'First_#variables.ticketName#' and last_name = 'Last_#variables.ticketName#')
@@ -2769,14 +2783,14 @@ component threadSafe extends="o3.internal.cfc.model" {
 		setPeakWeeks()
 		setSessionStaffNeeds(numToSetTo = 10, type = "cn")
 		setSessionStaffNeeds(numToSetTo = 10, type = "ac")
-		setSessionStaffNeeds(numToSetTo = 10, type = "hc")
+		setSessionStaffNeeds(numToSetTo = 10, type = "wc")
 		setSessionStaffNeeds(numToSetTo = 10, type = "cd")
 	}
 
 	private void function setSessionStaffNeeds(
 		required numeric numToSetTo,
 		string sessions = "",
-		string type = "cn" // cn | ac | hc | cd
+		string type = "cn" // cn | ac | wc | cd
 	) {
 		local.year = getModel("fsyDAO").getFSYYear().year
 		if (arguments.sessions == "") {
@@ -2795,11 +2809,11 @@ component threadSafe extends="o3.internal.cfc.model" {
 			update pm_session set
 				#arguments.type == "cn" ? "cn_male = :numToSetTo," : ""#
 				#arguments.type == "ac" ? "ac_male = :numToSetTo," : ""#
-				#arguments.type == "hc" ? "hc_male = :numToSetTo," : ""#
+				#arguments.type == "wc" ? "wc_male = :numToSetTo," : ""#
 				#arguments.type == "cd" ? "cd_male = :numToSetTo," : ""#
 				#arguments.type == "cn" ? "cn_female = :numToSetTo," : ""#
 				#arguments.type == "ac" ? "ac_female = :numToSetTo," : ""#
-				#arguments.type == "hc" ? "hc_female = :numToSetTo," : ""#
+				#arguments.type == "wc" ? "wc_female = :numToSetTo," : ""#
 				#arguments.type == "cd" ? "cd_female = :numToSetTo," : ""#
 				updated_by = :updated_by where pm_session_id in (:sessions)
 			",
@@ -2892,7 +2906,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Assistant Coordinator", "UT")
 		createAvailability(local.hireContext, [variables.dates.core, variables.dates.week9], 1)
 		setSessionStaffNeeds(0, "", "ac")
-		setSessionStaffNeeds(1, "10001521", "ac") // FSY OR Monmouth 02
+		setSessionStaffNeeds(1, "#variables.sessions.oregon#", "ac") // FSY OR Monmouth 02
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -3074,7 +3088,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "OR")
 		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week9], 1)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001521") // FSY OR Monmouth 02
+		setSessionStaffNeeds(1, "#variables.sessions.oregon#") // FSY OR Monmouth 02
 
 		runScheduler()
 		assertCandidatesAssigned(0)
@@ -3090,7 +3104,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week9], 1)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001521") // FSY OR Monmouth 02
+		setSessionStaffNeeds(1, "#variables.sessions.oregon#") // FSY OR Monmouth 02
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -3122,7 +3136,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week9], 1)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001521") // FSY OR Monmouth 02
+		setSessionStaffNeeds(1, "#variables.sessions.oregon#") // FSY OR Monmouth 02
 
 		runScheduler()
 		assertCandidatesAssigned(1)

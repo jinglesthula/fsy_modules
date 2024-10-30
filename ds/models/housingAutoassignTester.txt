@@ -1,0 +1,264 @@
+This is just some info I didn't feel like deleting yet which relates to the eponymous cfc
+
+-- a male without a roommate is placed in an empty room
+
+-- a male...
+-- ...with a non-mixed roommate is placed with their roommate in an empty room
+
+-- a male...
+-- ...with a mixed roommate is placed with their roommate in an empty room
+
+-- a male without a roommate is placed in a room where...
+-- ...another age-matching male is already placed
+
+-- a male without a roommate is not placed in a room where...
+-- ...another age-non-matching male is already placed
+
+-- a male...
+-- ...with a non-mixed roommate is placed with their roommate in a room where...
+-- ...another age-matching male is already placed
+
+-- a male...
+-- ...with a non-mixed roommate is not placed with their roommate in a room where...
+-- ...another age-non-matching male is already placed
+
+-- a male minor without a roommate is not placed...
+-- ...in a room that is mixed
+-- ...
+
+-- a male adult without a roommate is not placed...
+-- ...in a room that is mixed
+-- ...
+
+-- a male...
+-- ...with a non-mixed roommate is not placed...
+-- ...in a room that is mixed
+-- ...
+
+-- a male...
+-- ...with a mixed roommate is not placed...
+-- ...in a room that is mixed
+-- ...
+
+-- a male...
+-- ...with a mixed roommate is not placed in a room that has...
+-- ...a single male minor
+
+-- a male...
+-- ...with a mixed roommate is not placed in a room that has...
+-- ...a single male adult
+
+setup
+- create pm_session
+- create pm_session_ selector thingies and mappings
+- create pm_group and pm_counselor records
+- create participant people
+- create participant contexts
+- create accommodations
+- create pm_housing and assign to groups
+- place people in beds (those that should be there prior to the test running to place the test user(s))
+
+teardown
+- remove all pm_housing and pm_group assignments
+- remove all pm_group, pm_counselor, and pm_housing records
+- remove pm_session (after whatever else might block the removal)
+- remove the accommodations, contexts and people
+
+
+
+// involved tables' required fields
+
+product
+[
+  {
+    "fieldName": "STATUS",
+    "dataType": "VARCHAR (32)"
+  },
+  {
+    "fieldName": "SHORT_TITLE",
+    "dataType": "NVARCHAR (32)"
+  },
+  {
+    "fieldName": "TITLE",
+    "dataType": "NVARCHAR (128)"
+  },
+  {
+    "fieldName": "DEPARTMENT",
+    "dataType": "NVARCHAR (32)"
+  },
+  {
+    "fieldName": "PRODUCT_TYPE",
+    "dataType": "VARCHAR (32)"
+  },
+  {
+    "fieldName": "INCLUDE_IN_ENROLLMENT_TOTAL",
+    "dataType": "CHAR (1)"
+  }
+]
+
+option_group
+[
+  {
+    "fieldName": "SECTION",
+    "dataType": "NUMERIC (8)"
+  },
+  {
+    "fieldName": "NAME",
+    "dataType": "NVARCHAR (32)"
+  },
+  {
+    "fieldName": "MIN_CHOICE",
+    "dataType": "NUMERIC (2)"
+  },
+  {
+    "fieldName": "MAX_CHOICE",
+    "dataType": "NUMERIC (2)"
+  }
+]
+
+option_item
+[
+  {
+    "fieldName": "SECTION",
+    "dataType": "NUMERIC (8)"
+  },
+  {
+    "fieldName": "NAME",
+    "dataType": "NVARCHAR (32)"
+  },
+  {
+    "fieldName": "ITEM",
+    "dataType": "NUMERIC (8)"
+  }
+]
+
+pm_session
+[
+  {
+    "fieldName": "TITLE",
+    "dataType": "NVARCHAR (128)"
+  },
+  {
+    "fieldName": "START_DATE",
+    "dataType": "DATE"
+  },
+  {
+    "fieldName": "END_DATE",
+    "dataType": "DATE"
+  },
+  {
+    "fieldName": "SESSION_TYPE",
+    "dataType": "VARCHAR (32)"
+  }
+]
+
+pm_selector_product
+[
+  {
+    "fieldName": "PM_SESSION",
+    "dataType": "NUMERIC(8)"
+  },
+  {
+    "fieldName": "PM_SELECTOR",
+    "dataType": "NUMERIC(8)"
+  },
+  {
+    "fieldName": "PRODUCT",
+    "dataType": "NUMERIC(8)"
+  }
+]
+
+person
+[] (though we'll want name/gender/birthdate/church_id)
+
+pm_group
+[
+  {
+    "fieldName": "PM_SESSION",
+    "dataType": "NUMERIC(8)"
+  },
+  {
+    "fieldName": "GROUP_NUMBER",
+    "dataType": "SMALLINT"
+  },
+  {
+    "fieldName": "SIZE",
+    "dataType": "SMALLINT"
+  }
+]
+
+pm_group_selector
+[
+  {
+    "fieldName": "PM_GROUP",
+    "dataType": "NUMERIC(8)"
+  },
+  {
+    "fieldName": "PM_SELECTOR",
+    "dataType": "NUMERIC(8)"
+  }
+]
+
+pm_counselor
+[
+  {
+    "fieldName": "PM_SESSION",
+    "dataType": "NUMERIC(8)"
+  },
+  {
+    "fieldName": "TYPE",
+    "dataType": "VARCHAR(32)"
+  },
+  {
+    "fieldName": "NUMBER",
+    "dataType": "SMALLINT"
+  },
+  {
+    "fieldName": "GENDER",
+    "dataType": "CHAR"
+  }
+]
+
+context
+[
+  {
+    "fieldName": "PERSON",
+    "dataType": "NUMERIC (8)"
+  },
+  {
+    "fieldName": "PRODUCT",
+    "dataType": "NUMERIC (8)"
+  },
+  {
+    "fieldName": "CONTEXT_TYPE",
+    "dataType": "VARCHAR (32)"
+  },
+  {
+    "fieldName": "STATUS",
+    "dataType": "VARCHAR (32)"
+  }
+]
+
+accommodation
+[
+  {
+    "fieldName": "CONTEXT",
+    "dataType": "NUMERIC(8)"
+  },
+  {
+    "fieldName": "TYPE",
+    "dataType": "NVARCHAR (32)"
+  }
+]
+
+pm_housing
+[
+  {
+    "fieldName": "PM_SESSION",
+    "dataType": "NUMERIC (8)"
+  },
+  {
+    "fieldName": "BUILDING",
+    "dataType": "NVARCHAR (32)"
+  }
+]
