@@ -20,8 +20,49 @@ component threadSafe extends="o3.internal.cfc.model" {
 		order by pm_session.start_date
 	", { program = variables.trainingProgram }, { datasource: variables.dsn.local }).pm_session_id;
 	variables.sessions = {
-		oregon = queryExecute("SELECT pm_session_id FROM pm_session WHERE title = 'FSY OR Monmouth 02'", {}, { datasource: variables.dsn.local }).pm_session_id,
-		provo = ""
+		ab_calgary_01 = 10001637,
+		ab_calgary_02 = 10001655,
+		ab_calgary_03 = 10001668,
+		az_flagstaff_03 = 10001716,
+		az_flagstaff_04A = 10001722,
+		az_prescott_01 = 10001811,
+		az_prescott_02 = 10001812,
+		az_tempe_01 = 10001671,
+		az_thatcher_05 = 10001627,
+		az_tucson_02_es = 10001670,
+		ca_rohnert_park_01 = 10001610,
+		ca_rohnert_park_02 = 10001618,
+		co_colorado_springs_01 = 10001602,
+		co_colorado_springs_03 = 10001620,
+		ma_amherst_01 = 10001640,
+		mn_st_joseph_joseph = 10001650,
+		or_monmouth_02 = 10001776,
+		tx_denton_01 = 10001813,
+		tx_denton_02 = 10001815,
+		tx_san_antonio_01 = 10001643,
+		ut_ephraim_b_03B = 10001762,
+		ut_logan_02 = 10001788,
+		ut_orem_01 = 80001990,
+		ut_orem_02 = 10001836,
+		ut_provo_a_01A = 10001685,
+		ut_provo_a_02A = 10001688,
+		ut_provo_a_03A = 10001694,
+		ut_provo_a_04A = 10001738,
+		ut_provo_a_05A = 10001741,
+		ut_provo_a_06A = 10001707,
+		ut_provo_a_08A = 10001717,
+		ut_provo_b_01B = 10001686,
+		ut_provo_b_02B = 10001689,
+		ut_provo_b_03B = 10001695,
+		ut_provo_b_05B = 10001742,
+		ut_provo_b_06B = 10001708,
+		ut_provo_c_02C = 10001690,
+		ut_provo_c_06C = 10001709,
+		va_buena_vista_01 = 10001790,
+		va_buena_vista_02 = 10001793,
+		vt_castleton = 10001866,
+		core = 10052040,
+		cn_0A = 10052041
 	};
 
 	public query function countStarted() {
@@ -2409,6 +2450,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 			delete terms_acceptance where program = (select product_id from product where short_title = '2024FSY_#variables.ticketName#')
 			EXEC sp_set_session_context 'noTrigger', 0;
 		", {}, { datasource: variables.dsn.local } );
+		QueryExecute("update pm_counselor set context = null, updated_by = :created_by where context in (select context_id from context where product in (select product_id from product where short_title like '%_#variables.ticketName#') or person in (select person_id from person where first_name = 'First_#variables.ticketName#'))", { created_by: variables.ticket }, { datasource: variables.dsn.local } );
 		QueryExecute("delete fsy_session_unit where created_by = :created_by", { created_by: variables.ticket }, { datasource: variables.dsn.local } );
 		QueryExecute("delete pm_session where created_by = :created_by", { created_by: variables.ticket }, { datasource: variables.dsn.local } );
 		QueryExecute("delete session_preference where created_by = :created_by", { created_by: variables.ticket }, { datasource: variables.dsn.local } );
@@ -2906,7 +2948,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Assistant Coordinator", "UT")
 		createAvailability(local.hireContext, [variables.dates.core, variables.dates.week9], 1)
 		setSessionStaffNeeds(0, "", "ac")
-		setSessionStaffNeeds(1, "#variables.sessions.oregon#", "ac") // FSY OR Monmouth 02
+		setSessionStaffNeeds(1, "#variables.sessions.or_monmouth_02#", "ac")
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -2921,7 +2963,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1])
-		createTraining(local.person_id, 10001585);
+		createTraining(local.person_id, variables.sessions.cn_0A);
 		setSessionStaffNeeds(10)
 
 		runScheduler()
@@ -2937,7 +2979,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		createHiringInfo(local.hireContext, "Assistant Coordinator", "UT")
 		createAvailability(local.hireContext, [variables.dates.core, variables.dates.week1])
-		createTraining(local.person_id, 10001584);
+		createTraining(local.person_id, variables.sessions.core);
 		setSessionStaffNeeds(10)
 
 		runScheduler()
@@ -2955,10 +2997,10 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.hireContext = local.hireContext
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4], 4)
-		createAssignment(local.person_id, 10001317, "Counselor")
-		linkSessions(10001317, 10001343)
+		createAssignment(local.person_id, #variables.sessions.denton01#, "Counselor")
+		linkSessions(#variables.sessions.denton01#, #variables.sessions.denton02#)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(10, "10001317,10001343")
+		setSessionStaffNeeds(10, "#variables.sessions.denton01#,#variables.sessions.denton02#")
 
 		runScheduler()
 		assertCandidatesAssigned(2)
@@ -2991,7 +3033,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "AB", "CAN")
 		createAvailability(local.hireContext, [variables.dates.week6, variables.dates.week8, variables.dates.week9], 2)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001473,10001506")
+		setSessionStaffNeeds(1, "#variables.sessions.calgary02#,#variables.sessions.calgary03#")
 
 		runScheduler()
 		assertCandidatesAssigned(2)
@@ -3055,7 +3097,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week2, variables.dates.week3], 1)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001343")
+		setSessionStaffNeeds(1, "#variables.sessions.denton02#")
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -3072,7 +3114,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week2], 1)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001322") // FSY UT Provo 02A
+		setSessionStaffNeeds(1, "#variables.sessions.provo02a#")
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -3088,7 +3130,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "OR")
 		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week9], 1)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "#variables.sessions.oregon#") // FSY OR Monmouth 02
+		setSessionStaffNeeds(1, "#variables.sessions.oregon#")
 
 		runScheduler()
 		assertCandidatesAssigned(0)
@@ -3104,7 +3146,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week9], 1)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "#variables.sessions.oregon#") // FSY OR Monmouth 02
+		setSessionStaffNeeds(1, "#variables.sessions.oregon#")
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -3120,7 +3162,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4], 3)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001322,10001349,10001378") // FSY UT Provo 02/3/4A
+		setSessionStaffNeeds(1, "#variables.sessions.provo02a#,#variables.sessions.provo03a#,#variables.sessions.provo04a#")
 
 		runScheduler()
 		assertCandidatesAssigned(3)
@@ -3136,7 +3178,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week9], 1)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "#variables.sessions.oregon#") // FSY OR Monmouth 02
+		setSessionStaffNeeds(1, "#variables.sessions.oregon#")
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -3162,18 +3204,18 @@ component threadSafe extends="o3.internal.cfc.model" {
 			variables.dates.week8
 		], 4)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, 10001301) // Provo 01A
-		setSessionStaffNeeds(1, 10001322) // Provo 02A
-		setSessionStaffNeeds(1, 10001349) // Provo 03A
-		setSessionStaffNeeds(1, 10001378) // Provo 04A
-		setSessionStaffNeeds(1, 10001385) // AZ Thatcher 05
-		setSessionStaffNeeds(1, 10001433) // Provo 06A
-		setSessionStaffNeeds(1, 10001456) // MN St Joseph
-		setSessionStaffNeeds(1, 10001500) // Provo 08A
+		setSessionStaffNeeds(1, #variables.sessions.provo01a#) // Provo 01A
+		setSessionStaffNeeds(1, #variables.sessions.provo02a#) // Provo 02A
+		setSessionStaffNeeds(1, #variables.sessions.provo03a#) // Provo 03A
+		setSessionStaffNeeds(1, #variables.sessions.provo04a#) // Provo 04A
+		setSessionStaffNeeds(1, #variables.sessions.thatcher05#) // AZ Thatcher 05
+		setSessionStaffNeeds(1, #variables.sessions.provo06a#) // Provo 06A
+		setSessionStaffNeeds(1, #variables.sessions.stjoseph#) // MN St Joseph
+		setSessionStaffNeeds(1, #variables.sessions.provo08a#) // Provo 08A
 
 		runScheduler()
 		assertCandidatesAssigned(4)
-		assertSessionsAssigned(local.person_id, [ 10001385,10001378,10001433,10001456 ])
+		assertSessionsAssigned(local.person_id, [ #variables.sessions.thatcher05#,#variables.sessions.provo04a#,#variables.sessions.provo06a#,#variables.sessions.stjoseph# ])
 	}
 
 	private void function testTravelBalanceSadPath() hiringTest {
@@ -3195,17 +3237,17 @@ component threadSafe extends="o3.internal.cfc.model" {
 			variables.dates.week7
 		], 4)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, 10001301) // Provo 01A
-		setSessionStaffNeeds(1, 10001322) // Provo 02A
-		setSessionStaffNeeds(1, 10001349) // Provo 03A
-		setSessionStaffNeeds(1, 10001378) // Provo 04A
-		setSessionStaffNeeds(1, 10001385) // AZ Thatcher 05
-		setSessionStaffNeeds(1, 10001433) // Provo 06A
-		setSessionStaffNeeds(1, 10001456) // MN St Joseph
+		setSessionStaffNeeds(1, #variables.sessions.provo01a#) // Provo 01A
+		setSessionStaffNeeds(1, #variables.sessions.provo02a#) // Provo 02A
+		setSessionStaffNeeds(1, #variables.sessions.provo03a#) // Provo 03A
+		setSessionStaffNeeds(1, #variables.sessions.provo04a#) // Provo 04A
+		setSessionStaffNeeds(1, #variables.sessions.thatcher05#) // AZ Thatcher 05
+		setSessionStaffNeeds(1, #variables.sessions.provo06a#) // Provo 06A
+		setSessionStaffNeeds(1, #variables.sessions.stjoseph#) // MN St Joseph
 
 		runScheduler()
 		assertCandidatesAssigned(4)
-		assertSessionsAssigned(local.person_id, [ 10001385,10001378,10001433,10001456 ])
+		assertSessionsAssigned(local.person_id, [ #variables.sessions.thatcher05#,#variables.sessions.provo04a#,#variables.sessions.provo06a#,#variables.sessions.stjoseph# ])
 	}
 
 	// 21
@@ -3226,15 +3268,15 @@ component threadSafe extends="o3.internal.cfc.model" {
 			variables.dates.week5
 		], 4)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, 10001301) // Provo 01A
-		setSessionStaffNeeds(1, 10001322) // Provo 02A
-		setSessionStaffNeeds(1, 10001349) // Provo 03A
-		setSessionStaffNeeds(1, 10001378) // Provo 04A
-		setSessionStaffNeeds(1, 10001385) // AZ Thatcher 05
+		setSessionStaffNeeds(1, #variables.sessions.provo01a#) // Provo 01A
+		setSessionStaffNeeds(1, #variables.sessions.provo02a#) // Provo 02A
+		setSessionStaffNeeds(1, #variables.sessions.provo03a#) // Provo 03A
+		setSessionStaffNeeds(1, #variables.sessions.provo04a#) // Provo 04A
+		setSessionStaffNeeds(1, #variables.sessions.thatcher05#) // AZ Thatcher 05
 
 		runScheduler()
 		assertCandidatesAssigned(4)
-		assertSessionsAssigned(local.person_id, [ 10001385,10001378,10001349,10001301 ])
+		assertSessionsAssigned(local.person_id, [ #variables.sessions.thatcher05#,#variables.sessions.provo04a#,#variables.sessions.provo03a#,#variables.sessions.provo01a# ])
 	}
 
 	private void function testBackToBack_Local_Travel() hiringTest {
@@ -3249,8 +3291,8 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 2)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001322")
-		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
+		setSessionStaffNeeds(1, "#variables.sessions.provo02a#")
+		setSessionStaffNeeds(1, "#variables.sessions.buenavista01#") //FSY VA Buena Vista 01 - 2024-06-09 - week3
 
 		runScheduler()
 		assertCandidatesAssigned(2)
@@ -3269,8 +3311,8 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 2)
 		// travel week 2, travel week 3
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001310")
-		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
+		setSessionStaffNeeds(1, "#variables.sessions.coloradosprings01#")
+		setSessionStaffNeeds(1, "#variables.sessions.buenavista01#") //FSY VA Buena Vista 01 - 2024-06-09 - week3
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -3287,11 +3329,11 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ hireContext = local.hireContext })
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
-		createAssignment(local.person_id, 10001322, "Counselor")
-		createAssignment(local.person_id, 10001355, "Counselor") //FSY VA Buena Vista 01 - 2024-06-09 - week3
+		createAssignment(local.person_id, #variables.sessions.provo02a#, "Counselor")
+		createAssignment(local.person_id, #variables.sessions.buenavista01#, "Counselor") //FSY VA Buena Vista 01 - 2024-06-09 - week3
 		// local week 2, travel week 3, travel week 4
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001359")
+		setSessionStaffNeeds(1, "#variables.sessions.rohnertpark02#")
 
 		runScheduler()
 		assertCandidatesAssigned(2)
@@ -3308,11 +3350,11 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ hireContext = local.hireContext })
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
-		createAssignment(local.person_id, 10001355, "Counselor") //FSY VA Buena Vista 01 - 2024-06-09 - week3
-		createAssignment(local.person_id, 10001378, "Counselor")
+		createAssignment(local.person_id, #variables.sessions.buenavista01#, "Counselor") //FSY VA Buena Vista 01 - 2024-06-09 - week3
+		createAssignment(local.person_id, #variables.sessions.provo04a#, "Counselor")
 		// travel week 2, travel week 3, local week 4
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001310")
+		setSessionStaffNeeds(1, "#variables.sessions.coloradosprings01#")
 
 		runScheduler()
 		assertCandidatesAssigned(2)
@@ -3329,11 +3371,11 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ hireContext = local.hireContext })
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
-		createAssignment(local.person_id, 10001310, "Counselor") // 23
-		createAssignment(local.person_id, 10001349, "Counselor") // 24
+		createAssignment(local.person_id, #variables.sessions.coloradosprings01#, "Counselor") // 23
+		createAssignment(local.person_id, #variables.sessions.provo03a#, "Counselor") // 24
 		// travel week 2, local week 3, travel week 4
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001361")
+		setSessionStaffNeeds(1, "#variables.sessions.coloradosprings03#")
 
 		runScheduler()
 		assertCandidatesAssigned(3)
@@ -3350,11 +3392,11 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ hireContext = local.hireContext })
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
-		createAssignment(local.person_id, 10001361, "Counselor")
-		createAssignment(local.person_id, 10001349, "Counselor")
+		createAssignment(local.person_id, #variables.sessions.coloradosprings03#, "Counselor")
+		createAssignment(local.person_id, #variables.sessions.provo03a#, "Counselor")
 		// travel week 2, local week 3, travel week 4
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001310")
+		setSessionStaffNeeds(1, "#variables.sessions.coloradosprings01#")
 
 		runScheduler()
 		assertCandidatesAssigned(3)
@@ -3367,7 +3409,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.numWeeksWillWork = 1
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork)
 
-		local.sessions = "10001317,10001343"
+		local.sessions = "#variables.sessions.denton01#,#variables.sessions.denton02#"
 		local.sessionsArray = ListToArray(local.sessions)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
@@ -3387,7 +3429,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, 'Counselor', 'UT')
 		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week9], 1)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, '10000796') // FSY BC Vancouver
+		setSessionStaffNeeds(1, '#variables.sessions.ab_calgary_01#')
 
 		runScheduler()
 		assertCandidatesAssigned(0)
@@ -3408,7 +3450,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		)
 		createAvailability(local.hireContext, [variables.dates.week1, variables.dates.week9], 1)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, '10001307') // FSY AZ Tempe 01
+		setSessionStaffNeeds(1, '#variables.sessions.tempe01#')
 
 		runScheduler()
 		assertCandidatesAssigned(0)
@@ -3503,8 +3545,8 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hiresAvailabilityObject.setValue('start_date', '2024-06-09');
 		local.hiresAvailabilityObject.write();
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(2, '10001346')
-		setSessionStaffNeeds(1, '10001347')
+		setSessionStaffNeeds(2, '#variables.sessions.ephraim03b#')
+		setSessionStaffNeeds(1, '#variables.sessions.logan02#')
 		runScheduler()
 		assertCandidatesAssigned(1)
 	}
@@ -3518,7 +3560,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		createHiringInfo(local.hireContext, 'Counselor')
 		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1, variables.dates.week2], 2)
-		local.sessions = '10001294,10001306' // AZ Prescott 01/02
+		local.sessions = '#variables.sessions.prescott01#,#variables.sessions.prescott02#' // AZ Prescott 01/02
 		local.sessionsArray = listToArray(local.sessions)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
@@ -3538,7 +3580,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		createHiringInfo(local.hireContext, 'Counselor')
 		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1, variables.dates.week2], 2)
-		local.sessions = '10001294,10001306' // AZ Prescott 01/02
+		local.sessions = '#variables.sessions.prescott01#,#variables.sessions.prescott02#' // AZ Prescott 01/02
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
 
@@ -3556,7 +3598,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.hireContext = createHireContext(local.person_id, local.program)
 		createHiringInfo(local.hireContext, 'Counselor')
 		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week1, variables.dates.week2], 2)
-		local.sessions = '10001301,10001322' // Provo 01/02
+		local.sessions = '#variables.sessions.provo01a#,#variables.sessions.provo02a#' // Provo 01/02
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
 
@@ -3577,14 +3619,14 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 ], 2)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001301")
-		setSessionStaffNeeds(1, "10001310")
-		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
-		linkSessions(10001310, 10001355)
+		setSessionStaffNeeds(1, "#variables.sessions.provo01a#")
+		setSessionStaffNeeds(1, "#variables.sessions.coloradosprings01#")
+		setSessionStaffNeeds(1, "#variables.sessions.buenavista01#") //FSY VA Buena Vista 01 - 2024-06-09 - week3
+		linkSessions(#variables.sessions.coloradosprings01#, #variables.sessions.buenavista01#)
 
 		runScheduler()
 		assertCandidatesAssigned(2)
-		assertSessionsAssigned(local.person_id, [ 10001310, 10001355 ])
+		assertSessionsAssigned(local.person_id, [ #variables.sessions.coloradosprings01#, #variables.sessions.buenavista01# ])
 	}
 
 	private void function testLinkedSessions_3Travel2Linked_WillWork4_available3() hiringTest {
@@ -3598,18 +3640,18 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ hireContext = local.hireContext })
 
 		local.numWeeksWillWork = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
-		createAssignment(local.person_id, 10001301, "Counselor") // week 1
+		createAssignment(local.person_id, #variables.sessions.provo01a#, "Counselor") // week 1
 
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 , variables.dates.week4], local.numWeeksWillWork)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001359") //FSY CA Rohnert Park 02 - 2024-06-02 - week2
-		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
-		setSessionStaffNeeds(1, "10001383") //FSY VA Buena Vista 02 - 2024-06-16 - week4
-		linkSessions(10001355, 10001383)
+		setSessionStaffNeeds(1, "#variables.sessions.rohnertpark02#") //FSY CA Rohnert Park 02 - 2024-06-02 - week2
+		setSessionStaffNeeds(1, "#variables.sessions.buenavista01#") //FSY VA Buena Vista 01 - 2024-06-09 - week3
+		setSessionStaffNeeds(1, "#variables.sessions.buenavista02#") //FSY VA Buena Vista 02 - 2024-06-16 - week4
+		linkSessions(#variables.sessions.buenavista01#, #variables.sessions.buenavista02#)
 
 		runScheduler()
-		assertSessionsAssigned(local.person_id, [ 10001301, 10001383, 10001355 ])
+		assertSessionsAssigned(local.person_id, [ #variables.sessions.provo01a#, #variables.sessions.buenavista02#, #variables.sessions.buenavista01# ])
 	}
 
 	private void function testLinkedSessions_3Travel2Linked_WillWork4_available2() hiringTest {
@@ -3623,19 +3665,19 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ hireContext = local.hireContext })
 
 		local.numWeeksWillWork = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
-		createAssignment(local.person_id, 10001301, "Counselor") // week 1
-		createAssignment(local.person_id, 10001410, "Counselor") // week 5
+		createAssignment(local.person_id, #variables.sessions.provo01a#, "Counselor") // week 1
+		createAssignment(local.person_id, #variables.sessions.provo05b#, "Counselor") // week 5
 
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 , variables.dates.week4, variables.dates.week5], local.numWeeksWillWork)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001359") //FSY CA Rohnert Park 02 - 2024-06-02 - week2
-		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
-		setSessionStaffNeeds(1, "10001383") //FSY VA Buena Vista 02 - 2024-06-16 - week4
-		linkSessions(10001355, 10001383)
+		setSessionStaffNeeds(1, "#variables.sessions.rohnertpark02#") //FSY CA Rohnert Park 02 - 2024-06-02 - week2
+		setSessionStaffNeeds(1, "#variables.sessions.buenavista01#") //FSY VA Buena Vista 01 - 2024-06-09 - week3
+		setSessionStaffNeeds(1, "#variables.sessions.buenavista02#") //FSY VA Buena Vista 02 - 2024-06-16 - week4
+		linkSessions(#variables.sessions.buenavista01#, #variables.sessions.buenavista02#)
 
 		runScheduler()
-		assertSessionsAssigned(local.person_id, [ 10001301, 10001410, 10001383, 10001355 ])
+		assertSessionsAssigned(local.person_id, [ #variables.sessions.provo01a#, #variables.sessions.provo05b#, #variables.sessions.buenavista02#, #variables.sessions.buenavista01# ])
 	}
 
 	private void function testLinkedSessions_3Travel2Linked_WillWork4_available1() hiringTest {
@@ -3649,20 +3691,20 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ hireContext = local.hireContext })
 
 		local.numWeeksWillWork = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
-		createAssignment(local.person_id, 10001301, "Counselor") // week 1
-		createAssignment(local.person_id, 10001410, "Counselor") // week 5
-		createAssignment(local.person_id, 10001432, "Counselor") // week 6
+		createAssignment(local.person_id, #variables.sessions.provo01a#, "Counselor") // week 1
+		createAssignment(local.person_id, #variables.sessions.provo05b#, "Counselor") // week 5
+		createAssignment(local.person_id, #variables.sessions.orem02#, "Counselor") // week 6
 
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3 , variables.dates.week4, variables.dates.week5, variables.dates.week6], local.numWeeksWillWork)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001359") //FSY CA Rohnert Park 02 - 2024-06-02 - week2
-		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
-		setSessionStaffNeeds(1, "10001383") //FSY VA Buena Vista 02 - 2024-06-16 - week4
-		linkSessions(10001355, 10001383)
+		setSessionStaffNeeds(1, "#variables.sessions.rohnertpark02#") //FSY CA Rohnert Park 02 - 2024-06-02 - week2
+		setSessionStaffNeeds(1, "#variables.sessions.buenavista01#") //FSY VA Buena Vista 01 - 2024-06-09 - week3
+		setSessionStaffNeeds(1, "#variables.sessions.buenavista02#") //FSY VA Buena Vista 02 - 2024-06-16 - week4
+		linkSessions(#variables.sessions.buenavista01#, #variables.sessions.buenavista02#)
 
 		runScheduler()
-		assertSessionsAssigned(local.person_id, [ 10001301, 10001410, 10001432, 10001359 ])
+		assertSessionsAssigned(local.person_id, [ #variables.sessions.provo01a#, #variables.sessions.provo05b#, #variables.sessions.orem02#, #variables.sessions.rohnertpark02# ])
 	}
 
 	private void function testLinkedSessions_3Linked() hiringTest {
@@ -3677,15 +3719,15 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week2, variables.dates.week3, variables.dates.week4 ], 3)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001310")
-		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
-		setSessionStaffNeeds(1, "10001383") //FSY VA Buena Vista 02 - 2024-06-16 - week4
-		linkSessions(10001383, 10001310)
-		linkSessions(10001383, 10001355)
+		setSessionStaffNeeds(1, "#variables.sessions.coloradosprings01#")
+		setSessionStaffNeeds(1, "#variables.sessions.buenavista01#") //FSY VA Buena Vista 01 - 2024-06-09 - week3
+		setSessionStaffNeeds(1, "#variables.sessions.buenavista02#") //FSY VA Buena Vista 02 - 2024-06-16 - week4
+		linkSessions(#variables.sessions.buenavista02#, #variables.sessions.coloradosprings01#)
+		linkSessions(#variables.sessions.buenavista02#, #variables.sessions.buenavista01#)
 
 		runScheduler()
 		assertCandidatesAssigned(3)
-		assertSessionsAssigned(local.person_id, [ 10001383, 10001310, 10001355 ])
+		assertSessionsAssigned(local.person_id, [ #variables.sessions.buenavista02#, #variables.sessions.coloradosprings01#, #variables.sessions.buenavista01# ])
 	}
 
 	private void function testLinkedSessions_2Linked_OnlyAvailable1Week() hiringTest {
@@ -3700,9 +3742,9 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week1 ], 1)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001310")
-		setSessionStaffNeeds(1, "10001355") //FSY VA Buena Vista 01 - 2024-06-09 - week3
-		linkSessions(10001310, 10001355)
+		setSessionStaffNeeds(1, "#variables.sessions.coloradosprings01#")
+		setSessionStaffNeeds(1, "#variables.sessions.buenavista01#") //FSY VA Buena Vista 01 - 2024-06-09 - week3
+		linkSessions(#variables.sessions.coloradosprings01#, #variables.sessions.buenavista01#)
 
 		runScheduler()
 		assertCandidatesAssigned(0)
@@ -3720,14 +3762,14 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ hireContext = local.hireContext })
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week0, variables.dates.week2, variables.dates.week3 ], 1)
-		setPeakWeeks(10001349)
+		setPeakWeeks(#variables.sessions.provo03a#)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001322")
-		setSessionStaffNeeds(1, "10001349") // marked as peak week
+		setSessionStaffNeeds(1, "#variables.sessions.provo02a#")
+		setSessionStaffNeeds(1, "#variables.sessions.provo03a#") // marked as peak week
 
 		runScheduler()
 		assertCandidatesAssigned(1)
-		assertSessionsAssigned(local.person_id, [ 10001349 ])
+		assertSessionsAssigned(local.person_id, [ #variables.sessions.provo03a# ])
 	}
 
 	private void function testCAFirst_only_CA() hiringTest {
@@ -3743,7 +3785,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week4 ], 1)
 		// CA week 4
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001359")
+		setSessionStaffNeeds(1, "#variables.sessions.rohnertpark02#")
 
 		runScheduler()
 		assertCandidatesAssigned(0)
@@ -3762,13 +3804,13 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week3, variables.dates.week4 ], 2)
 		// CA week 3, local week 3, CA week 4
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001335")
-		setSessionStaffNeeds(1, "10001350")
-		setSessionStaffNeeds(1, "10001359")
+		setSessionStaffNeeds(1, "#variables.sessions.rohnertpark01#")
+		setSessionStaffNeeds(1, "#variables.sessions.provo03b#")
+		setSessionStaffNeeds(1, "#variables.sessions.rohnertpark02#")
 
 		runScheduler()
 		assertCandidatesAssigned(2)
-		assertSessionsAssigned(local.person_id, [ 10001350, 10001359 ])
+		assertSessionsAssigned(local.person_id, [ #variables.sessions.provo03b#, #variables.sessions.rohnertpark02# ])
 	}
 
 	private void function testCAFirst_1CA_1LocalAlreadyAssigned() hiringTest {
@@ -3782,10 +3824,10 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.append({ hireContext = local.hireContext })
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [ variables.dates.week1, variables.dates.week3, variables.dates.week4 ], 2)
-		createAssignment(local.person_id, 10001378, "Counselor")
+		createAssignment(local.person_id, #variables.sessions.provo04a#, "Counselor")
 		// CA week 3, local week 4
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(1, "10001335")
+		setSessionStaffNeeds(1, "#variables.sessions.rohnertpark01#")
 
 		runScheduler()
 		assertCandidatesAssigned(1)
@@ -3798,7 +3840,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.numWeeksWillWork = 2
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork)
 
-		local.sessions = "10001301,10001302"
+		local.sessions = "#variables.sessions.provo01a#,#variables.sessions.provo01b#"
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
 
@@ -3813,7 +3855,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.numWeeksWillWork = 2
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork)
 
-		local.sessions = "10001317,10001343"
+		local.sessions = "#variables.sessions.denton01#,#variables.sessions.denton02#"
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
 
@@ -3828,7 +3870,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.numWeeksWillWork = 2
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork)
 
-		local.sessions = "10001301,10001322"
+		local.sessions = "#variables.sessions.provo01a#,#variables.sessions.provo02a#"
 		setSessionStaffNeeds(10, local.sessions)
 
 		runScheduler()
@@ -3842,7 +3884,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.numWeeksWillWork = 2
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork)
 
-		local.sessions = "10001317,10001343"
+		local.sessions = "#variables.sessions.denton01#,#variables.sessions.denton02#"
 		local.sessionsArray = ListToArray(local.sessions)
 		setSessionStaffNeeds(10, local.sessions)
 		linkSessions(local.sessionsArray[1], local.sessionsArray[2])
@@ -3858,7 +3900,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.numWeeksWillWork = 2
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork, "MA")
 
-		local.sessions = "10001488,10001516" //FSY MA Amherst 01 & FSY MA Amherst 02
+		local.sessions = "#variables.sessions.ma_amherst_01#,#variables.sessions.vt_castleton#"
 		local.sessionsArray = ListToArray(local.sessions)
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
@@ -3875,13 +3917,13 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.numWeeksWillWork = 1
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork)
 
-		local.sessions = "10001301,10001322"
+		local.sessions = "#variables.sessions.provo01a#,#variables.sessions.provo02a#"
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
-		setPeakWeeks("10001322")
+		setPeakWeeks("#variables.sessions.provo02a#")
 
 		runScheduler()
-		assertCandidatesAssignedSpecificSessions("10001322")
+		assertCandidatesAssignedSpecificSessions("#variables.sessions.provo02a#")
 	}
 
 	// 51
@@ -3891,22 +3933,22 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4]
 		local.numWeeksWillWork = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork)
-		createAssignment(local.return.person_id, 10001301, "Counselor") // week 1
-		createAssignment(local.return.person_id, 10001349, "Counselor") // week 3
-		createAssignment(local.return.person_id, 10001378, "Counselor") // week 4
-		setDesirability("10001301", 0)
-		setDesirability("10001349", 0)
-		setDesirability("10001378", 0)
+		createAssignment(local.return.person_id, #variables.sessions.provo01a#, "Counselor") // week 1
+		createAssignment(local.return.person_id, #variables.sessions.provo03a#, "Counselor") // week 3
+		createAssignment(local.return.person_id, #variables.sessions.provo04a#, "Counselor") // week 4
+		setDesirability("#variables.sessions.provo01a#", 0)
+		setDesirability("#variables.sessions.provo03a#", 0)
+		setDesirability("#variables.sessions.provo04a#", 0)
 
-		local.sessions = "10001322,10001323,10001324" // all week 2
+		local.sessions = "#variables.sessions.provo02a#,#variables.sessions.provo02b#,#variables.sessions.provo02c#" // all week 2
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
-		setDesirability("10001322", -1)
-		setDesirability("10001323", 0)
-		setDesirability("10001324", 1)
+		setDesirability("#variables.sessions.provo02a#", -1)
+		setDesirability("#variables.sessions.provo02b#", 0)
+		setDesirability("#variables.sessions.provo02c#", 1)
 
 		runScheduler()
-		assertCandidatesAssignedSpecificSessions("10001301,10001349,10001378,10001323")
+		assertCandidatesAssignedSpecificSessions("#variables.sessions.provo01a#,#variables.sessions.provo03a#,#variables.sessions.provo04a#,#variables.sessions.provo02b#")
 	}
 
 	private void function testDesirabilityPositiveThreeOptions() hiringTest { //with three sessions (0, -1, 1), gets assigned desirability of -1
@@ -3915,22 +3957,22 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4]
 		local.numWeeksWillWork = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork)
-		createAssignment(local.return.person_id, 10001301, "Counselor") // week 1
-		createAssignment(local.return.person_id, 10001349, "Counselor") // week 3
-		createAssignment(local.return.person_id, 10001378, "Counselor") // week 4
-		setDesirability("10001301", 0)
-		setDesirability("10001349", 0)
-		setDesirability("10001378", 1)
+		createAssignment(local.return.person_id, #variables.sessions.provo01a#, "Counselor") // week 1
+		createAssignment(local.return.person_id, #variables.sessions.provo03a#, "Counselor") // week 3
+		createAssignment(local.return.person_id, #variables.sessions.provo04a#, "Counselor") // week 4
+		setDesirability("#variables.sessions.provo01a#", 0)
+		setDesirability("#variables.sessions.provo03a#", 0)
+		setDesirability("#variables.sessions.provo04a#", 1)
 
-		local.sessions = "10001322,10001323,10001324"
+		local.sessions = "#variables.sessions.provo02a#,#variables.sessions.provo02b#,#variables.sessions.provo02c#"
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
-		setDesirability("10001322", -1)
-		setDesirability("10001323", 0)
-		setDesirability("10001324", 1)
+		setDesirability("#variables.sessions.provo02a#", -1)
+		setDesirability("#variables.sessions.provo02b#", 0)
+		setDesirability("#variables.sessions.provo02c#", 1)
 
 		runScheduler()
-		assertCandidatesAssignedSpecificSessions("10001301,10001349,10001378,10001322")
+		assertCandidatesAssignedSpecificSessions("#variables.sessions.provo01a#,#variables.sessions.provo03a#,#variables.sessions.provo04a#,#variables.sessions.provo02a#")
 	}
 
 	private void function testDesirabilityNegativeThreeOptions() hiringTest { //with three sessions (0, -1, 1), gets assigned desirability of 1
@@ -3939,22 +3981,22 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4]
 		local.numWeeksWillWork = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork)
-		createAssignment(local.return.person_id, 10001301, "Counselor") // week 1
-		createAssignment(local.return.person_id, 10001349, "Counselor") // week 3
-		createAssignment(local.return.person_id, 10001378, "Counselor") // week 4
-		setDesirability("10001301", 0)
-		setDesirability("10001349", 0)
-		setDesirability("10001378", -1)
+		createAssignment(local.return.person_id, #variables.sessions.provo01a#, "Counselor") // week 1
+		createAssignment(local.return.person_id, #variables.sessions.provo03a#, "Counselor") // week 3
+		createAssignment(local.return.person_id, #variables.sessions.provo04a#, "Counselor") // week 4
+		setDesirability("#variables.sessions.provo01a#", 0)
+		setDesirability("#variables.sessions.provo03a#", 0)
+		setDesirability("#variables.sessions.provo04a#", -1)
 
-		local.sessions = "10001322,10001323,10001324"
+		local.sessions = "#variables.sessions.provo02a#,#variables.sessions.provo02b#,#variables.sessions.provo02c#"
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
-		setDesirability("10001322", -1) // week 2
-		setDesirability("10001323", 0) // week 2
-		setDesirability("10001324", 1) // week 2
+		setDesirability("#variables.sessions.provo02a#", -1) // week 2
+		setDesirability("#variables.sessions.provo02b#", 0) // week 2
+		setDesirability("#variables.sessions.provo02c#", 1) // week 2
 
 		runScheduler()
-		assertCandidatesAssignedSpecificSessions("10001301,10001349,10001378,10001324")
+		assertCandidatesAssignedSpecificSessions("#variables.sessions.provo01a#,#variables.sessions.provo03a#,#variables.sessions.provo04a#,#variables.sessions.provo02c#")
 	}
 
 	/*
@@ -3968,14 +4010,14 @@ component threadSafe extends="o3.internal.cfc.model" {
 
 			setDesirability("10001304", 0)
 			createAssignment(local.return.person_id, 10001304, "Counselor")
-			local.sessions = "10001322,10001324"
+			local.sessions = "#variables.sessions.provo02a#,#variables.sessions.provo02c#"
 			setSessionStaffNeeds(0)
 			setSessionStaffNeeds(10, local.sessions)
-			setDesirability("10001322", -1)
-			setDesirability("10001324", 1)
+			setDesirability("#variables.sessions.provo02a#", -1)
+			setDesirability("#variables.sessions.provo02c#", 1)
 
 			runScheduler()
-			assertCandidatesAssignedSpecificSessions("10001304,10001323")
+			assertCandidatesAssignedSpecificSessions("10001304,#variables.sessions.provo02b#")
 		}
 	*/
 
@@ -3985,21 +4027,21 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4]
 		local.numWeeksWillWork = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork)
-		createAssignment(local.return.person_id, 10001301, "Counselor") // week 1
-		createAssignment(local.return.person_id, 10001349, "Counselor") // week 3
-		createAssignment(local.return.person_id, 10001378, "Counselor") // week 4
-		setDesirability("10001301", 0)
-		setDesirability("10001349", 0)
-		setDesirability("10001378", 1)
+		createAssignment(local.return.person_id, #variables.sessions.provo01a#, "Counselor") // week 1
+		createAssignment(local.return.person_id, #variables.sessions.provo03a#, "Counselor") // week 3
+		createAssignment(local.return.person_id, #variables.sessions.provo04a#, "Counselor") // week 4
+		setDesirability("#variables.sessions.provo01a#", 0)
+		setDesirability("#variables.sessions.provo03a#", 0)
+		setDesirability("#variables.sessions.provo04a#", 1)
 
-		local.sessions = "10001323,10001324"
+		local.sessions = "#variables.sessions.provo02b#,#variables.sessions.provo02c#"
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
-		setDesirability("10001323", 0)
-		setDesirability("10001324", 1)
+		setDesirability("#variables.sessions.provo02b#", 0)
+		setDesirability("#variables.sessions.provo02c#", 1)
 
 		runScheduler()
-		assertCandidatesAssignedSpecificSessions("10001301,10001349,10001378,10001323")
+		assertCandidatesAssignedSpecificSessions("#variables.sessions.provo01a#,#variables.sessions.provo03a#,#variables.sessions.provo04a#,#variables.sessions.provo02b#")
 	}
 
 	private void function testDesirabilityNegativeTwoOptions() hiringTest { //with two sessions (0, -1), gets assigned desirability of 1
@@ -4008,21 +4050,21 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4]
 		local.numWeeksWillWork = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork)
-		createAssignment(local.return.person_id, 10001301, "Counselor") // week 1
-		createAssignment(local.return.person_id, 10001349, "Counselor") // week 3
-		createAssignment(local.return.person_id, 10001378, "Counselor") // week 4
-		setDesirability("10001301", 0)
-		setDesirability("10001349", 0)
-		setDesirability("10001378", -1)
+		createAssignment(local.return.person_id, #variables.sessions.provo01a#, "Counselor") // week 1
+		createAssignment(local.return.person_id, #variables.sessions.provo03a#, "Counselor") // week 3
+		createAssignment(local.return.person_id, #variables.sessions.provo04a#, "Counselor") // week 4
+		setDesirability("#variables.sessions.provo01a#", 0)
+		setDesirability("#variables.sessions.provo03a#", 0)
+		setDesirability("#variables.sessions.provo04a#", -1)
 
-		local.sessions = "10001322,10001323"
+		local.sessions = "#variables.sessions.provo02a#,#variables.sessions.provo02b#"
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
-		setDesirability("10001322", -1)
-		setDesirability("10001323", 0)
+		setDesirability("#variables.sessions.provo02a#", -1)
+		setDesirability("#variables.sessions.provo02b#", 0)
 
 		runScheduler()
-		assertCandidatesAssignedSpecificSessions("10001301,10001349,10001378,10001323")
+		assertCandidatesAssignedSpecificSessions("#variables.sessions.provo01a#,#variables.sessions.provo03a#,#variables.sessions.provo04a#,#variables.sessions.provo02b#")
 	}
 
 	private void function testCoordinator() hiringTest {
@@ -4045,23 +4087,23 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4, variables.dates.week5]
 		local.numWeeksWillWork = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork)
-		createAssignment(local.return.person_id, 10001301, "Counselor") // week 1
-		createAssignment(local.return.person_id, 10001349, "Counselor") // week 3
-		createAssignment(local.return.person_id, 10001378, "Counselor") // week 4
-		setDesirability("10001301", 0)
-		setDesirability("10001349", 0)
-		setDesirability("10001378", -1)
+		createAssignment(local.return.person_id, #variables.sessions.provo01a#, "Counselor") // week 1
+		createAssignment(local.return.person_id, #variables.sessions.provo03a#, "Counselor") // week 3
+		createAssignment(local.return.person_id, #variables.sessions.provo04a#, "Counselor") // week 4
+		setDesirability("#variables.sessions.provo01a#", 0)
+		setDesirability("#variables.sessions.provo03a#", 0)
+		setDesirability("#variables.sessions.provo04a#", -1)
 
-		local.sessions = "10001322,10001323,10001408,10001409"
+		local.sessions = "#variables.sessions.provo02a#,#variables.sessions.provo02b#,#variables.sessions.ut_orem_01#,#variables.sessions.provo05a#"
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
-		setDesirability("10001322", -1) //week 2
-		setDesirability("10001323", -1) //week 2
-		setDesirability("10001408", 0) //week 5
-		setDesirability("10001409", 0) //week 5
+		setDesirability("#variables.sessions.provo02a#", -1) //week 2
+		setDesirability("#variables.sessions.provo02b#", -1) //week 2
+		setDesirability("#variables.sessions.ut_orem_01#", 0) //week 5
+		setDesirability("#variables.sessions.provo05a#", 0) //week 5
 
 		runScheduler()
-		assertCandidatesAssignedSpecificSessions("10001301,10001349,10001378,10001408")
+		assertCandidatesAssignedSpecificSessions("#variables.sessions.provo01a#,#variables.sessions.provo03a#,#variables.sessions.provo04a#,#variables.sessions.ut_orem_01#")
 	}
 
 	private void function testDesirabilityPositiveSubsequentWeeks() hiringTest { //with two sessions (0, -1), gets assigned desirability of 1
@@ -4070,23 +4112,23 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4, variables.dates.week5]
 		local.numWeeksWillWork = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork)
-		createAssignment(local.return.person_id, 10001301, "Counselor") // week 1
-		createAssignment(local.return.person_id, 10001349, "Counselor") // week 3
-		createAssignment(local.return.person_id, 10001378, "Counselor") // week 4
-		setDesirability("10001301", 0)
-		setDesirability("10001349", 0)
-		setDesirability("10001378", 1)
+		createAssignment(local.return.person_id, #variables.sessions.provo01a#, "Counselor") // week 1
+		createAssignment(local.return.person_id, #variables.sessions.provo03a#, "Counselor") // week 3
+		createAssignment(local.return.person_id, #variables.sessions.provo04a#, "Counselor") // week 4
+		setDesirability("#variables.sessions.provo01a#", 0)
+		setDesirability("#variables.sessions.provo03a#", 0)
+		setDesirability("#variables.sessions.provo04a#", 1)
 
-		local.sessions = "10001322,10001323,10001408,10001409"
+		local.sessions = "#variables.sessions.provo02a#,#variables.sessions.provo02b#,#variables.sessions.ut_orem_01#,#variables.sessions.provo05a#"
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
-		setDesirability("10001322", 1) //week 2
-		setDesirability("10001323", 1) //week 2
-		setDesirability("10001408", 0) //week 5
-		setDesirability("10001409", 0) //week 5
+		setDesirability("#variables.sessions.provo02a#", 1) //week 2
+		setDesirability("#variables.sessions.provo02b#", 1) //week 2
+		setDesirability("#variables.sessions.ut_orem_01#", 0) //week 5
+		setDesirability("#variables.sessions.provo05a#", 0) //week 5
 
 		runScheduler()
-		assertCandidatesAssignedSpecificSessions("10001301,10001349,10001378,10001408")
+		assertCandidatesAssignedSpecificSessions("#variables.sessions.provo01a#,#variables.sessions.provo03a#,#variables.sessions.provo04a#,#variables.sessions.ut_orem_01#")
 	}
 
 	private void function testDesirabilityNeutralSubsequentWeeks() hiringTest { //with two sessions (0, -1), gets assigned desirability of 1
@@ -4095,25 +4137,25 @@ component threadSafe extends="o3.internal.cfc.model" {
 		local.availableWeeks = [variables.dates.week0, variables.dates.week1, variables.dates.week2, variables.dates.week3, variables.dates.week4, variables.dates.week5, variables.dates.week6]
 		local.numWeeksWillWork = 4 // 4+ so we don't get assigned peak weeks which trumps desirability
 		local.return = setupForScheduler(local.availableWeeks, local.numWeeksWillWork)
-		createAssignment(local.return.person_id, 10001301, "Counselor") // week 1
-		createAssignment(local.return.person_id, 10001349, "Counselor") // week 3
-		createAssignment(local.return.person_id, 10001378, "Counselor") // week 4
-		setDesirability("10001301", 0)
-		setDesirability("10001349", 0)
-		setDesirability("10001378", 0)
+		createAssignment(local.return.person_id, #variables.sessions.provo01a#, "Counselor") // week 1
+		createAssignment(local.return.person_id, #variables.sessions.provo03a#, "Counselor") // week 3
+		createAssignment(local.return.person_id, #variables.sessions.provo04a#, "Counselor") // week 4
+		setDesirability("#variables.sessions.provo01a#", 0)
+		setDesirability("#variables.sessions.provo03a#", 0)
+		setDesirability("#variables.sessions.provo04a#", 0)
 
-		local.sessions = "10001322,10001323,10001408,10001409,10001434,10001435"
+		local.sessions = "#variables.sessions.provo02a#,#variables.sessions.provo02b#,#variables.sessions.ut_orem_01#,#variables.sessions.provo05a#,#variables.sessions.provo06b#,#variables.sessions.provo06c#"
 		setSessionStaffNeeds(0)
 		setSessionStaffNeeds(10, local.sessions)
-		setDesirability("10001322", 1) //week 2
-		setDesirability("10001323", 1) //week 2
-		setDesirability("10001408", -1) //week 5
-		setDesirability("10001409", -1) //week 5
-		setDesirability("10001434", 0) //week 6
-		setDesirability("10001435", 0) //week 6
+		setDesirability("#variables.sessions.provo02a#", 1) //week 2
+		setDesirability("#variables.sessions.provo02b#", 1) //week 2
+		setDesirability("#variables.sessions.ut_orem_01#", -1) //week 5
+		setDesirability("#variables.sessions.provo05a#", -1) //week 5
+		setDesirability("#variables.sessions.provo06b#", 0) //week 6
+		setDesirability("#variables.sessions.provo06c#", 0) //week 6
 
 		runScheduler()
-		assertCandidatesAssignedSpecificSessions("10001301,10001349,10001378,10001434")
+		assertCandidatesAssignedSpecificSessions("#variables.sessions.provo01a#,#variables.sessions.provo03a#,#variables.sessions.provo04a#,#variables.sessions.provo06b#")
 	}
 
 	private void function testTwoLinkedAreTravelAdjacent() hiringTest {
@@ -4125,13 +4167,13 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.hireContext = local.hireContext
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week5, variables.dates.week6, variables.dates.week7, variables.dates.week8], 4)
-		linkSessions(10001417, 10001440)
+		linkSessions(variables.sessions.flagstaff03, variables.sessions.az_flagstaff_04A)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(10, "10001574,10001417,10001440")
+		setSessionStaffNeeds(10, "#variables.sessions.tx_san_antonio_01#,#variables.sessions.flagstaff03#,#variables.sessions.az_flagstaff_04A#")
 
 		runScheduler()
 		assertCandidatesAssigned(2)
-		assertCandidatesAssignedSpecificSessions("10001417,10001440")
+		assertCandidatesAssignedSpecificSessions("#variables.sessions.flagstaff03#,#variables.sessions.az_flagstaff_04A#")
 	}
 
 	private void function testAssignedOneLinkedOtherIsTravelAdjacent() hiringTest { // Gary said don't assign them the other linked one in this case (they broke the rule already; don't fix their decision by breaking a different rule)
@@ -4143,14 +4185,14 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.hireContext = local.hireContext
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week5, variables.dates.week6, variables.dates.week7, variables.dates.week8], 4)
-		createAssignment(local.person_id, 10001574, "Counselor")
-		linkSessions(10001417, 10001440)
+		createAssignment(local.person_id, variables.sessions.tx_san_antonio_01, "Counselor")
+		linkSessions(variables.sessions.flagstaff03, variables.sessions.az_flagstaff_04A)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(10, "10001574,10001417,10001440")
+		setSessionStaffNeeds(10, "#variables.sessions.tx_san_antonio_01#,#variables.sessions.flagstaff03#,#variables.sessions.az_flagstaff_04A#")
 
 		runScheduler()
 		assertCandidatesAssigned(1)
-		assertCandidatesAssignedSpecificSessions("10001574")
+		assertCandidatesAssignedSpecificSessions("#variables.sessions.tx_san_antonio_01#")
 	}
 
 	private void function testAssignedTwoLinkedOfThreeWithMiddleUnassigned() hiringTest {
@@ -4162,16 +4204,16 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.hireContext = local.hireContext
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week5, variables.dates.week6, variables.dates.week7, variables.dates.week8], 4)
-		createAssignment(local.person_id, 10001574, "Counselor")
-		createAssignment(local.person_id, 10001440, "Counselor")
-		linkSessions(10001417, 10001574)
-		linkSessions(10001417, 10001440)
+		createAssignment(local.person_id, variables.sessions.tx_san_antonio_01, "Counselor")
+		createAssignment(local.person_id, variables.sessions.az_flagstaff_04A, "Counselor")
+		linkSessions(variables.sessions.flagstaff03, variables.sessions.tx_san_antonio_01)
+		linkSessions(variables.sessions.flagstaff03, variables.sessions.az_flagstaff_04A)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(10, "10001574,10001417,10001440")
+		setSessionStaffNeeds(10, "#variables.sessions.tx_san_antonio_01#,#variables.sessions.flagstaff03#,#variables.sessions.az_flagstaff_04A#")
 
 		runScheduler()
 		assertCandidatesAssigned(3)
-		assertCandidatesAssignedSpecificSessions("10001574,10001417,10001440")
+		assertCandidatesAssignedSpecificSessions("#variables.sessions.tx_san_antonio_01#,#variables.sessions.flagstaff03#,#variables.sessions.az_flagstaff_04A#")
 	}
 
 	private void function testAssignedOneLinkedOneUnlinkedWithMiddleUnassignedLinkedToAnAssigned() hiringTest { // Gary said don't assign them the other linked one in this case (they broke the rule already; don't fix their decision by breaking a different rule)
@@ -4183,15 +4225,15 @@ component threadSafe extends="o3.internal.cfc.model" {
 		application.progress.hireContext = local.hireContext
 		createHiringInfo(local.hireContext, "Counselor", "UT")
 		createAvailability(local.hireContext, [variables.dates.week0, variables.dates.week5, variables.dates.week6, variables.dates.week7, variables.dates.week8], 4)
-		createAssignment(local.person_id, 10001574, "Counselor")
-		createAssignment(local.person_id, 10001440, "Counselor")
-		linkSessions(10001417, 10001440)
+		createAssignment(local.person_id, variables.sessions.tx_san_antonio_01, "Counselor")
+		createAssignment(local.person_id, variables.sessions.az_flagstaff_04A, "Counselor")
+		linkSessions(variables.sessions.flagstaff03, variables.sessions.az_flagstaff_04A)
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(10, "10001574,10001417,10001440")
+		setSessionStaffNeeds(10, "#variables.sessions.tx_san_antonio_01#,#variables.sessions.flagstaff03#,#variables.sessions.az_flagstaff_04A#")
 
 		runScheduler()
 		assertCandidatesAssigned(2)
-		assertCandidatesAssignedSpecificSessions("10001574,10001440")
+		assertCandidatesAssignedSpecificSessions("#variables.sessions.tx_san_antonio_01#,#variables.sessions.az_flagstaff_04A#")
 	}
 
 	private void function testTrainingWeirdoProdIssue() hiringTest {
@@ -4222,10 +4264,10 @@ component threadSafe extends="o3.internal.cfc.model" {
 		createAvailability(local.hireContext, [
 			variables.dates.week0, variables.dates.week2, variables.dates.week3, variables.dates.week4, variables.dates.week5
 		], 4)
-		createAssignment(local.person_id, 10001332, "Counselor")
-		queryExecute("update pm_session set no_auto_assign = 'Y', updated_by = '#variables.ticket#' where pm_session_id = 10001332", {}, { datasource: variables.dsn.local });
+		createAssignment(local.person_id, variables.sessions.az_tucson_02_es, "Counselor")
+		queryExecute("update pm_session set no_auto_assign = 'Y', updated_by = '#variables.ticket#' where pm_session_id = variables.sessions.az_tucson_02_es", {}, { datasource: variables.dsn.local });
 		setSessionStaffNeeds(0)
-		setSessionStaffNeeds(10, "10001323,10001378")
+		setSessionStaffNeeds(10, "#variables.sessions.provo02b#,#variables.sessions.provo04a#")
 
 		runScheduler()
 		assertCandidatesAssigned(3)
@@ -4243,10 +4285,10 @@ component threadSafe extends="o3.internal.cfc.model" {
 			variables.dates.week0, variables.dates.week2, variables.dates.week3, variables.dates.week4, variables.dates.week5
 		], 1)
 		setSessionStaffNeeds(10)
-		setPeakWeeks(10001409)
+		setPeakWeeks(#variables.sessions.provo05a#)
 
 		runScheduler()
-		assertCandidatesAssignedSpecificSessions(10001409)
+		assertCandidatesAssignedSpecificSessions(#variables.sessions.provo05a#)
 	}
 
 	// Stuff for ds-epic-vite app
