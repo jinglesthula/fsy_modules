@@ -2578,6 +2578,12 @@ component threadSafe extends="o3.internal.cfc.model" {
 			)
 		", {}, { datasource: variables.dsn.local });
 
+		QueryExecute("
+			update pm_counselor set context = null, updated_by = :created_by
+			where context in (select context_id from context where product in (select product_id from product where short_title like '%_#variables.ticketName#')
+				or person in (select person_id from person where first_name = 'First_#variables.ticketName#'))
+		", { created_by: variables.ticket }, { datasource: variables.dsn.local } );
+
 		queryExecute("
 			DELETE context_property WHERE context IN (
 				SELECT context_id
