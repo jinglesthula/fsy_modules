@@ -48,7 +48,7 @@ tests = [
   // 41
   ,"testPeakWeeks"
   ,"testTwoAvailSameWeek"
-  ,"testIncompatibleTravelAfter" // Expected: 1 Actual: 2
+  ,"testIncompatibleTravelAfter"
   ,"testTwoCompatibleBeforeAfter"
   ,"testIncompatibleTravelBefore"
   ,"testTwoAvailLinkedWAIsWAResident"
@@ -60,16 +60,16 @@ tests = [
   ,"testDesirabilityPositiveTwoOptions"
   ,"testDesirabilityNegativeTwoOptions"
   ,"testCoordinator"
-  ,"testDesirabilityNegativeSubsequentWeeks" // Expected: ["10001685","10001694","10001738","80001990"] Actual: ["10001685","10001694","10001738","10001741"]
-  ,"testDesirabilityPositiveSubsequentWeeks" // Expected: ["10001685","10001694","10001738","80001990"] Actual: ["10001685","10001694","10001738","10001741"]
+  ,"testDesirabilityNegativeSubsequentWeeks"
+  ,"testDesirabilityPositiveSubsequentWeeks"
   ,"testDesirabilityNeutralSubsequentWeeks"
-  ,"testTwoLinkedAreTravelAdjacent" // Expected: 2 Actual: 3
-  ,"testAssignedOneLinkedOtherIsTravelAdjacent" // Expected: 1 Actual: 3
+  ,"testTwoLinkedAreTravelAdjacent"
+  ,"testAssignedOneLinkedOtherIsTravelAdjacent"
   ,"testAssignedTwoLinkedOfThreeWithMiddleUnassigned"
-  ,"testAssignedOneLinkedOneUnlinkedWithMiddleUnassignedLinkedToAnAssigned" // Expected: 2 Actual: 3
+  ,"testAssignedOneLinkedOneUnlinkedWithMiddleUnassignedLinkedToAnAssigned"
   // 61
-  ,"testTrainingWeirdoProdIssue" // Expected: 7 Actual: 0
-  ,"testAlreadyAssignedNoAutoAssignSession" // Expected: 3 Actual: 2
+  ,"testTrainingWeirdoProdIssue"
+  ,"testAlreadyAssignedNoAutoAssignSession"
   ,"testPreferPeakWeeks"
 
   // DON'T RUN THIS. WE'RE NOT DOING IT.  NOT THE DROIDS ////////,"testDesirabilityNeutralTwoOptions"
