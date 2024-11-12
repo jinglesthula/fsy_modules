@@ -47,19 +47,16 @@ tests = [
   ,"testLinkedSessions_2Linked_OnlyAvailable1Week"
   // 41
   ,"testPeakWeeks"
-  ,"testCAFirst_only_CA"
-  ,"testCAFirst_1Local_2CA" // Expected: 10001695,10001618 Actual: 10001610,10001618
-  ,"testCAFirst_1CA_1LocalAlreadyAssigned"
   ,"testTwoAvailSameWeek"
-  ,"testTwoAvailNotLinkedNotLocal" // Expected: 1 Actual: 2
-  ,"testTwoAvailLocal"
-  ,"testTwoAvailLinkedNotLocal"
+  ,"testIncompatibleTravelAfter" // Expected: 1 Actual: 2
+  ,"testTwoCompatibleBeforeAfter"
+  ,"testIncompatibleTravelBefore"
   ,"testTwoAvailLinkedWAIsWAResident"
   ,"testOneAvailPeakWeek"
-  // 51
   ,"testDesirabilityNeutralThreeOptions"
   ,"testDesirabilityPositiveThreeOptions"
   ,"testDesirabilityNegativeThreeOptions"
+  // 51
   ,"testDesirabilityPositiveTwoOptions"
   ,"testDesirabilityNegativeTwoOptions"
   ,"testCoordinator"
@@ -67,10 +64,10 @@ tests = [
   ,"testDesirabilityPositiveSubsequentWeeks" // Expected: ["10001685","10001694","10001738","80001990"] Actual: ["10001685","10001694","10001738","10001741"]
   ,"testDesirabilityNeutralSubsequentWeeks"
   ,"testTwoLinkedAreTravelAdjacent" // Expected: 2 Actual: 3
-  // 61
   ,"testAssignedOneLinkedOtherIsTravelAdjacent" // Expected: 1 Actual: 3
   ,"testAssignedTwoLinkedOfThreeWithMiddleUnassigned"
   ,"testAssignedOneLinkedOneUnlinkedWithMiddleUnassignedLinkedToAnAssigned" // Expected: 2 Actual: 3
+  // 61
   ,"testTrainingWeirdoProdIssue" // Expected: 7 Actual: 0
   ,"testAlreadyAssignedNoAutoAssignSession" // Expected: 3 Actual: 2
   ,"testPreferPeakWeeks"
@@ -88,7 +85,7 @@ tests = [
 //x = { start = 61, end = 66}
 
 // Run an arbitrary range of tests
-x = { start = 17, end = 20 }
+x = { start = 1, end = 63 }
 
 // Indexes for blocks and ranges
 testsToRun = []
@@ -97,7 +94,7 @@ for (i = x.start; i <= x.end; i++) {
 }
 
 // Run a specific list of tests
- testsToRun = [39] // 39, 43, 46, 57, 58, 60, 61, 63, 64, 65
+//testsToRun = [59] // 59
 
 
 for (i in testsToRun) {

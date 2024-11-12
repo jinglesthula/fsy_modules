@@ -62,5 +62,8 @@ INSERT INTO fsy_session_link (base_session, linked_session, created_by) VALUES (
 update pm_session set linked_after = 'Y', travel_after = null where pm_session_id = 10001858
 update pm_session set linked_before = 'Y', travel_before = null where pm_session_id = 10001795
 
--- oh, and here's another modification because reasons (for test 37 we need to allow a 6 before a provo session, but they all have travel_before of 5 in the real world)
+-- oh, and here's another modification because reasons (for tests 37 and 62 we need to allow a 6 before a provo session, but they all have travel_before of 5 in the real world)
 update pm_session set travel_before = 6 where pm_session_id = 10001742
+update pm_session set travel_before = 6 where pm_session_id = 10001695
+-- oh, and here's another modification because reasons (for test 58 we need to prevent adjacent unlinked travel sessions and I was lazy)
+update pm_session set travel_before = 5 where pm_session_id = 10001716
