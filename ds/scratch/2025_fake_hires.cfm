@@ -91,12 +91,12 @@ for (i = 1; i <= arrayLen(rows); i++) {
           )",
           {
               context_id: {value: context_id, cfsqltype: "cf_sql_integer"}
-              ,application_type: {value: rowData[cols.application_type], cfsqltype: "cf_sql_varchar", null: rowData[cols.application_type] == ""}
-              ,empl_rcd: {value: rowData[cols.empl_rcd], cfsqltype: "cf_sql_varchar", null: rowData[cols.empl_rcd] == ""}
-              ,hired_position: {value: rowData[cols.hired_position], cfsqltype: "cf_sql_varchar", null: rowData[cols.hired_position] == ""}
-              ,interview_score: {value: rowData[cols.interview_score], cfsqltype: "cf_sql_integer", null: rowData[cols.interview_score] == ""}
-              ,state: {value: rowData[cols.state], cfsqltype: "cf_sql_varchar", null: rowData[cols.state] == ""}
-              ,country: {value: rowData[cols.country], cfsqltype: "cf_sql_varchar", null: rowData[cols.country] == ""}
+              ,application_type: {value: rowData[cols.application_type], cfsqltype: "cf_sql_varchar", null: rowData[cols.application_type] == "" || rowData[cols.application_type] == "NULL"}
+              ,empl_rcd: {value: rowData[cols.empl_rcd], cfsqltype: "cf_sql_varchar", null: rowData[cols.empl_rcd] == "" || rowData[cols.empl_rcd] == "NULL"}
+              ,hired_position: {value: rowData[cols.hired_position], cfsqltype: "cf_sql_varchar", null: rowData[cols.hired_position] == "" || rowData[cols.hired_position] == "NULL"}
+              ,interview_score: {value: rowData[cols.interview_score], cfsqltype: "cf_sql_integer", null: rowData[cols.interview_score] == "" || rowData[cols.interview_score] == "NULL"}
+              ,state: {value: rowData[cols.state], cfsqltype: "cf_sql_varchar", null: rowData[cols.state] == "" || rowData[cols.state] == "NULL"}
+              ,country: {value: rowData[cols.country], cfsqltype: "cf_sql_varchar", null: rowData[cols.country] == "" || rowData[cols.country] == "NULL"}
           },
           { datasource = application.dsn.fsy }
         );
