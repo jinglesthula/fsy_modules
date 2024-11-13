@@ -3281,7 +3281,7 @@ component threadSafe extends="o3.internal.cfc.model" {
 		assertSessionsAssigned(local.person_id, [
 			variables.sessions.ut_provo_01A,
 			variables.sessions.ut_provo_03a,
-			variables.sessions.ut_provo_05a,
+			variables.sessions.ut_provo_04A, // or 5a
 			variables.sessions.az_thatcher_06
 		])
 	}
