@@ -125,7 +125,16 @@ for (i = 1; i <= arrayLen(rows); i++) {
     // Insert into availability_week table
     availabilityWeekInsert = queryExecute("
       INSERT INTO availability_week (hires_availability, start_date, type, week_position, created_by)
-      SELECT :hires_availability_id, :start_date, :type, :week_position, 'FSY-2883'
+      SELECT
+        :hires_availability_id,
+        DATEADD(DAY,
+            7 * (DATEPART(wk, :start_date) - DATEPART(wk, DATEADD(YEAR, 1, :start_date))) +
+            (DATEPART(dw, :start_date) - DATEPART(dw, DATEADD(YEAR, 1, :start_date))),
+            DATEADD(YEAR, 1, :start_date)
+        ),
+        :type,
+        :week_position,
+        'FSY-2883'
       WHERE NOT EXISTS (
         SELECT hires_availability
         FROM availability_week
