@@ -3312,10 +3312,10 @@ component threadSafe extends="o3.internal.cfc.model" {
 		runScheduler()
 		assertCandidatesAssigned(4)
 		assertSessionsAssigned(local.person_id, [
-			variables.sessions.az_thatcher_06,
-			variables.sessions.ut_provo_04A,
+			variables.sessions.ut_provo_02a,
 			variables.sessions.ut_provo_03A,
-			variables.sessions.ut_provo_05a
+			variables.sessions.ut_provo_04A,
+			variables.sessions.az_thatcher_06
 		])
 	}
 
